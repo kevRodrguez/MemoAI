@@ -198,7 +198,7 @@ export default function AuthScreen() {
               </Animated.View>
 
               <Animated.View
-                layout={LinearTransition.springify().damping(18).stiffness(180)}
+                layout={LinearTransition.duration(280).easing(Easing.inOut(Easing.ease))}
                 style={styles.fields}>
                 {isSignUp && (
                   <Animated.View
