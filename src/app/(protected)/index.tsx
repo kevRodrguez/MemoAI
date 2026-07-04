@@ -1,46 +1,79 @@
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MemoColors } from '@/assets/colors';
+import { GradientBackground } from '@/components/gradient-background';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function ProtectedHomeScreen() {
   const { profile, user, loading, signOut } = useAuth();
   const displayName = profile?.name || profile?.user_name || user?.email || 'Memo user';
+  const [isSignOutButtonPressed, setIsSignOutButtonPressed] = useState(false);
+  const almaProgress = useSharedValue(0);
+  const signOutButtonScale = useSharedValue(1);
+
+  useEffect(() => {
+    almaProgress.value = withRepeat(
+      withTiming(1, {
+        duration: 2400,
+        easing: Easing.inOut(Easing.cubic),
+      }),
+      -1,
+      true
+    );
+  }, [almaProgress]);
+
+  useEffect(() => {
+    signOutButtonScale.value = withTiming(isSignOutButtonPressed ? 0.98 : 1, {
+      duration: isSignOutButtonPressed ? 120 : 160,
+    });
+  }, [isSignOutButtonPressed, signOutButtonScale]);
+
+  const almaAnimatedStyle = useAnimatedStyle(() => ({
+    shadowOpacity: 0.24 + almaProgress.value * 0.22,
+    transform: [
+      { translateY: -4 * almaProgress.value },
+      { scale: 1 + almaProgress.value * 0.035 },
+    ],
+  }));
+
+  const statusDotAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: 0.56 + almaProgress.value * 0.44,
+    transform: [{ scale: 0.85 + almaProgress.value * 0.28 }],
+  }));
+
+  const signOutButtonAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: signOutButtonScale.value }],
+  }));
 
   return (
-    <View style={styles.screen}>
-      <LinearGradient
-        colors={['rgba(35,133,255,0.20)', 'rgba(3,7,18,0)']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0.8, y: 0.8 }}
-        pointerEvents="none"
-        style={styles.topGlow}
-      />
-      <LinearGradient
-        colors={['rgba(3,7,18,0)', 'rgba(35,133,255,0.22)', 'rgba(74,168,254,0.38)']}
-        locations={[0, 0.6, 1]}
-        pointerEvents="none"
-        style={styles.bottomGlow}
-      />
-
+    <GradientBackground>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <SafeAreaView style={styles.safeArea}>
-          <View style={styles.header}>
+          <Animated.View entering={FadeInDown.duration(520).delay(80)} style={styles.header}>
             <Image source={require('@/assets/MemoLogoName.png')} style={styles.logo} contentFit="contain" />
             <View style={styles.statusPill}>
-              <View style={styles.statusDot} />
+              <Animated.View style={[styles.statusDot, statusDotAnimatedStyle]} />
               <Text style={styles.statusText}>Sesion activa</Text>
             </View>
-          </View>
+          </Animated.View>
 
-          <View style={styles.hero}>
-            <View style={styles.almaOrb}>
+          <Animated.View entering={FadeInDown.duration(620).delay(160)} style={styles.hero}>
+            <Animated.View style={[styles.almaOrb, almaAnimatedStyle]}>
               <Image source={require('@/assets/MemoIcon1080px.png')} style={styles.almaLogo} contentFit="contain" />
-            </View>
+            </Animated.View>
 
             <Text style={styles.eyebrow}>{`Hola, ${displayName}`}</Text>
             <Text style={styles.title}>Memo esta lista para tu proxima reunion.</Text>
@@ -48,27 +81,36 @@ export default function ProtectedHomeScreen() {
               Auth y perfil ya estan conectados. El siguiente paso natural es capturar audio,
               generar transcripcion y convertir compromisos en tareas personales.
             </Text>
-          </View>
+          </Animated.View>
 
-          <View style={styles.profilePanel}>
+          <Animated.View entering={FadeInDown.duration(620).delay(260)} style={styles.profilePanel}>
             <Text style={styles.panelTitle}>Perfil</Text>
-            <ProfileRow label="Nombre" value={profile?.name ?? 'Pendiente'} />
-            <ProfileRow label="Usuario" value={profile?.user_name ?? 'Pendiente'} />
-            <ProfileRow label="Email" value={profile?.email ?? user?.email ?? 'Pendiente'} />
+            <Animated.View entering={FadeIn.duration(360).delay(380)}>
+              <ProfileRow label="Nombre" value={profile?.name ?? 'Pendiente'} />
+            </Animated.View>
+            <Animated.View entering={FadeIn.duration(360).delay(440)}>
+              <ProfileRow label="Usuario" value={profile?.user_name ?? 'Pendiente'} />
+            </Animated.View>
+            <Animated.View entering={FadeIn.duration(360).delay(500)}>
+              <ProfileRow label="Email" value={profile?.email ?? user?.email ?? 'Pendiente'} />
+            </Animated.View>
 
-            <Pressable
-              onPress={signOut}
-              disabled={loading}
-              style={({ pressed }) => [
-                styles.signOutButton,
-                (pressed || loading) && styles.signOutButtonPressed,
-              ]}>
-              <Text style={styles.signOutButtonText}>{loading ? 'Cerrando...' : 'Cerrar sesion'}</Text>
-            </Pressable>
-          </View>
+            <Animated.View
+              entering={FadeInDown.duration(420).delay(560)}
+              style={signOutButtonAnimatedStyle}>
+              <Pressable
+                onPress={signOut}
+                onPressIn={() => setIsSignOutButtonPressed(true)}
+                onPressOut={() => setIsSignOutButtonPressed(false)}
+                disabled={loading}
+                style={[styles.signOutButton, loading && styles.signOutButtonPressed]}>
+                <Text style={styles.signOutButtonText}>{loading ? 'Cerrando...' : 'Cerrar sesion'}</Text>
+              </Pressable>
+            </Animated.View>
+          </Animated.View>
         </SafeAreaView>
       </ScrollView>
-    </View>
+    </GradientBackground>
   );
 }
 
@@ -84,24 +126,6 @@ function ProfileRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#030712',
-  },
-  topGlow: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 280,
-    height: 280,
-  },
-  bottomGlow: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    left: 0,
-    height: '50%',
-  },
   scroll: {
     flex: 1,
   },

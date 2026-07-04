@@ -17,10 +17,12 @@ import {
 import Animated, {
   Easing,
   FadeIn,
+  FadeInDown,
   FadeOut,
   LinearTransition,
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
   withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -31,6 +33,8 @@ import { useAuth } from '@/providers/auth-provider';
 
 type AuthMode = 'signIn' | 'signUp';
 
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
+
 export default function AuthScreen() {
   const { session, initializing, loading, errorMessage, signIn, signUp, clearError } = useAuth();
   const [mode, setMode] = useState<AuthMode>('signIn');
@@ -40,7 +44,10 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
   const [localMessage, setLocalMessage] = useState<string | null>(null);
   const [segmentWidth, setSegmentWidth] = useState(0);
+  const [isPrimaryButtonPressed, setIsPrimaryButtonPressed] = useState(false);
   const segmentIndex = useSharedValue(0);
+  const glowProgress = useSharedValue(0);
+  const primaryButtonScale = useSharedValue(1);
   const isSignUp = mode === 'signUp';
   const signInSegmentTextStyle = !isSignUp
     ? { ...styles.segmentText, ...styles.segmentTextActive }
@@ -56,6 +63,23 @@ export default function AuthScreen() {
     });
   }, [isSignUp, segmentIndex]);
 
+  useEffect(() => {
+    glowProgress.value = withRepeat(
+      withTiming(1, {
+        duration: 4200,
+        easing: Easing.inOut(Easing.quad),
+      }),
+      -1,
+      true
+    );
+  }, [glowProgress]);
+
+  useEffect(() => {
+    primaryButtonScale.value = withTiming(isPrimaryButtonPressed ? 0.98 : 1, {
+      duration: isPrimaryButtonPressed ? 120 : 160,
+    });
+  }, [isPrimaryButtonPressed, primaryButtonScale]);
+
   const segmentIndicatorStyle = useAnimatedStyle(() => {
     const itemWidth = (segmentWidth - 8) / 2;
     return {
@@ -63,6 +87,27 @@ export default function AuthScreen() {
       transform: [{ translateX: segmentIndex.value * itemWidth }],
     };
   });
+
+  const bottomGlowAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: 0.74 + glowProgress.value * 0.26,
+    transform: [
+      { translateY: -10 * glowProgress.value },
+      { scale: 1 + glowProgress.value * 0.035 },
+    ],
+  }));
+
+  const cornerGlowAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: 0.72 + glowProgress.value * 0.24,
+    transform: [
+      { translateX: 8 * glowProgress.value },
+      { translateY: -6 * glowProgress.value },
+      { scale: 1 + glowProgress.value * 0.06 },
+    ],
+  }));
+
+  const primaryButtonAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: primaryButtonScale.value }],
+  }));
 
   function handleSegmentLayout(event: LayoutChangeEvent) {
     setSegmentWidth(event.nativeEvent.layout.width);
@@ -99,20 +144,20 @@ export default function AuthScreen() {
 
   return (
     <View style={styles.screen}>
-      <LinearGradient
+      <AnimatedLinearGradient
         colors={['rgba(35,133,255,0)', 'rgba(35,133,255,0.28)', 'rgba(74,168,254,0.44)']}
         locations={[0, 0.55, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         pointerEvents="none"
-        style={styles.bottomGlow}
+        style={[styles.bottomGlow, bottomGlowAnimatedStyle]}
       />
-      <LinearGradient
+      <AnimatedLinearGradient
         colors={['rgba(35,133,255,0.22)', 'rgba(0,0,0,0)']}
         start={{ x: 0, y: 0 }}
         end={{ x: 0.8, y: 0.8 }}
         pointerEvents="none"
-        style={styles.cornerGlow}
+        style={[styles.cornerGlow, cornerGlowAnimatedStyle]}
       />
 
       <SafeAreaView style={styles.safeArea}>
@@ -123,7 +168,7 @@ export default function AuthScreen() {
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}>
-            <View style={styles.brandBlock}>
+            <Animated.View entering={FadeInDown.duration(580).delay(80)} style={styles.brandBlock}>
               <Image
                 source={require('@/assets/MemoLogoNameWhite.png')}
                 style={styles.logo}
@@ -132,12 +177,15 @@ export default function AuthScreen() {
               <Text style={styles.eyebrow}>Asistente de reuniones</Text>
               <Text style={styles.title}>Tu memoria operativa para cada reunion.</Text>
               <Text style={styles.subtitle}>
-                Inicia sesion para capturar contexto, compromisos y tareas personales con Alma.
+                Inicia sesion para capturar contexto, compromisos y tareas personales con Memo.
               </Text>
-            </View>
+            </Animated.View>
 
-            <View style={styles.formShell}>
-              <View style={styles.segmentedControl} onLayout={handleSegmentLayout}>
+            <Animated.View entering={FadeIn.duration(620).delay(180)} style={styles.formShell}>
+              <Animated.View
+                entering={FadeIn.duration(420).delay(280)}
+                style={styles.segmentedControl}
+                onLayout={handleSegmentLayout}>
                 {segmentWidth > 0 && (
                   <Animated.View style={[styles.segmentIndicator, segmentIndicatorStyle]} />
                 )}
@@ -147,7 +195,7 @@ export default function AuthScreen() {
                 <Pressable onPress={() => setMode('signUp')} style={styles.segment}>
                   <Text style={signUpSegmentTextStyle}>Crear cuenta</Text>
                 </Pressable>
-              </View>
+              </Animated.View>
 
               <Animated.View
                 layout={LinearTransition.springify().damping(18).stiffness(180)}
@@ -178,51 +226,63 @@ export default function AuthScreen() {
                   </Animated.View>
                 )}
 
-                <TextInput
-                  placeholder="Email"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="email"
-                  value={email}
-                  onChangeText={setEmail}
-                  style={styles.nativeInput}
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                />
-                <TextInput
-                  placeholder="Password"
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete={isSignUp ? 'new-password' : 'off'}
-                  value={password}
-                  onChangeText={setPassword}
-                  style={styles.nativeInput}
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                />
+                <Animated.View entering={FadeInDown.duration(420).delay(320)}>
+                  <TextInput
+                    placeholder="Email"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="email"
+                    value={email}
+                    onChangeText={setEmail}
+                    style={styles.nativeInput}
+                    placeholderTextColor="rgba(255,255,255,0.5)"
+                  />
+                </Animated.View>
+                <Animated.View entering={FadeInDown.duration(420).delay(380)}>
+                  <TextInput
+                    placeholder="Password"
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete={isSignUp ? 'new-password' : 'off'}
+                    value={password}
+                    onChangeText={setPassword}
+                    style={styles.nativeInput}
+                    placeholderTextColor="rgba(255,255,255,0.5)"
+                  />
+                </Animated.View>
 
                 {(localMessage || errorMessage) && (
-                  <Text style={styles.errorText}>{localMessage ?? errorMessage ?? ''}</Text>
+                  <Animated.Text entering={FadeInDown.duration(260)} style={styles.errorText}>
+                    {localMessage ?? errorMessage ?? ''}
+                  </Animated.Text>
                 )}
 
-                <Pressable
-                  onPress={submit}
-                  disabled={loading || initializing}
-                  style={({ pressed }) => [
-                    styles.primaryButton,
-                    (pressed || loading || initializing) && styles.primaryButtonPressed,
-                  ]}>
-                  <Text style={styles.primaryButtonText}>
-                    {loading ? 'Procesando...' : isSignUp ? 'Crear cuenta' : 'Entrar'}
-                  </Text>
-                </Pressable>
+                <Animated.View
+                  entering={FadeInDown.duration(420).delay(440)}
+                  style={primaryButtonAnimatedStyle}>
+                  <Pressable
+                    onPress={submit}
+                    onPressIn={() => setIsPrimaryButtonPressed(true)}
+                    onPressOut={() => setIsPrimaryButtonPressed(false)}
+                    disabled={loading || initializing}
+                    style={[
+                      styles.primaryButton,
+                      (loading || initializing) && styles.primaryButtonPressed,
+                    ]}>
+                    <Text style={styles.primaryButtonText}>
+                      {loading ? 'Procesando...' : isSignUp ? 'Crear cuenta' : 'Entrar'}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
               </Animated.View>
-            </View>
+            </Animated.View>
 
             {initializing && (
-              <View style={styles.loadingOverlay}>
+              <Animated.View entering={FadeIn.duration(260)} style={styles.loadingOverlay}>
                 <ActivityIndicator color={MemoColors.secondaryBlue} />
-              </View>
+              </Animated.View>
             )}
           </ScrollView>
         </KeyboardAvoidingView>

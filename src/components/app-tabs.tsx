@@ -1,30 +1,34 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useColorScheme } from 'react-native';
 
-import { Colors } from '@/constants/theme';
+const TAB_BAR_BACKGROUND = '#030712';
 
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-
   return (
     <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
-      <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
+      backgroundColor={TAB_BAR_BACKGROUND}
+      indicatorColor="rgba(74,168,254,0.35)"
+      labelStyle={{ selected: { color: '#ffffff' }, default: { color: 'rgba(255,255,255,0.55)' } }}>
+      <NativeTabs.Trigger name="meetings">
+        <NativeTabs.Trigger.Label>Meetings</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
+          sf={{ default: 'calendar', selected: 'calendar' }}
+          md="event"
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger name="index">
+        <NativeTabs.Trigger.Label>Chat</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
+          sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }}
+          md="chat"
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="tasks">
+        <NativeTabs.Trigger.Label>Tasks</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'checklist', selected: 'checklist' }}
+          md="checklist"
         />
       </NativeTabs.Trigger>
     </NativeTabs>
