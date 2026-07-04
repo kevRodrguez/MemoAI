@@ -1,16 +1,8 @@
 import { Image } from 'expo-image';
 import { type Href, router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
   FadeInDown,
@@ -20,14 +12,14 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MemoColors } from '@/assets/colors';
 import { GradientBackground } from '@/components/gradient-background';
 import { MemoActionButtons } from '@/components/memo-action-buttons';
 import { MemoChatComposer } from '@/components/memo-chat-composer';
 import { MemoModeTrigger } from '@/components/memo-mode-trigger';
-import { Spacing } from '@/constants/theme';
+import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTabBar } from '@/context/tab-bar-context';
 import { sendMemoChatMessage } from '@/services/memo-webhooks';
 import type { MemoChatWebhookResponse, MemoMode, MemoStatus } from '@/types/memo';
@@ -62,7 +54,8 @@ function getReplyFromWebhook(response: MemoChatWebhookResponse) {
 
 export default function ProtectedHomeScreen() {
   const { profile, user } = useAuth();
-  const { setIsTabBarHidden } = useTabBar();
+  const { isTabBarHidden, setIsTabBarHidden } = useTabBar();
+  const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<MemoMode>(null);
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -80,16 +73,21 @@ export default function ProtectedHomeScreen() {
     }, [setIsTabBarHidden])
   );
 
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+
   const revealTabBarGesture = useMemo(
     () =>
       Gesture.Pan()
-        .activeOffsetY([-18, 18])
-        .failOffsetX([-24, 24])
+        .simultaneousWithExternalGesture(
+          scrollRef as unknown as React.RefObject<React.ComponentType>
+        )
+        .activeOffsetY([-14, 14])
+        .failOffsetX([-28, 28])
         .onEnd((event) => {
           'worklet';
-          if (event.translationY < -36) {
+          if (event.translationY < -30) {
             runOnJS(setIsTabBarHidden)(false);
-          } else if (event.translationY > 36) {
+          } else if (event.translationY > 30) {
             runOnJS(setIsTabBarHidden)(true);
           }
         }),
@@ -145,6 +143,23 @@ export default function ProtectedHomeScreen() {
     transform: [{ scale: 1 + pulseProgress.value * 0.12 }],
   }));
 
+  const composerHiddenBottom = insets.bottom + Spacing.two;
+  const composerVisibleBottom = insets.bottom + BottomTabInset + Spacing.two;
+  const tabBarProgress = useSharedValue(isTabBarHidden ? 0 : 1);
+
+  useEffect(() => {
+    tabBarProgress.value = withTiming(isTabBarHidden ? 0 : 1, {
+      duration: 260,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [isTabBarHidden, tabBarProgress]);
+
+  const composerAnimatedStyle = useAnimatedStyle(() => ({
+    paddingBottom:
+      composerHiddenBottom +
+      (composerVisibleBottom - composerHiddenBottom) * tabBarProgress.value,
+  }));
+
   const handleStartMode = (nextMode: Exclude<MemoMode, null>) => {
     setLatestReply(null);
     setErrorMessage(null);
@@ -190,11 +205,13 @@ export default function ProtectedHomeScreen() {
         <KeyboardAvoidingView
           style={styles.keyboardAvoidingView}
           behavior={Platform.select({ ios: 'padding', default: undefined })}>
-        <ScrollView
-          style={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.content}>
-          <SafeAreaView style={styles.safeArea}>
+          <ScrollView
+            ref={scrollRef}
+            style={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            alwaysBounceVertical
+            contentContainerStyle={styles.content}>
+          <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
             <Animated.View entering={FadeInDown.duration(520).delay(80)} style={styles.header}>
               <Pressable
                 accessibilityRole="button"
@@ -233,7 +250,9 @@ export default function ProtectedHomeScreen() {
               </View>
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.duration(620).delay(260)} style={styles.composerShell}>
+            <Animated.View
+              entering={FadeInDown.duration(620).delay(260)}
+              style={[styles.composerShell, composerAnimatedStyle]}>
               <MemoChatComposer
                 loading={isSending}
                 resetKey={composerResetKey}
@@ -244,7 +263,7 @@ export default function ProtectedHomeScreen() {
               />
             </Animated.View>
           </SafeAreaView>
-        </ScrollView>
+          </ScrollView>
         </KeyboardAvoidingView>
       </GestureDetector>
     </GradientBackground>
@@ -260,7 +279,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    paddingBottom: Spacing.four,
   },
   safeArea: {
     flex: 1,
@@ -348,7 +366,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  composerShell: {
-    paddingBottom: Spacing.two,
-  },
+  composerShell: {},
 });

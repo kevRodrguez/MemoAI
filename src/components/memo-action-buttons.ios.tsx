@@ -21,7 +21,7 @@ export function MemoActionButtons({
   ];
 
   return (
-    <Host matchContents style={styles.host}>
+    <Host matchContents ignoreSafeArea="all" style={styles.host}>
       <HStack spacing={8}>
         <Button
           label="Llamada con Memo"
