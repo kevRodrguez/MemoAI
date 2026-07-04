@@ -1,10 +1,20 @@
 import { Image } from 'expo-image';
-import { type Href, router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { type Href, router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
   FadeInDown,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -17,13 +27,14 @@ import { GradientBackground } from '@/components/gradient-background';
 import { MemoActionButtons } from '@/components/memo-action-buttons';
 import { MemoChatComposer } from '@/components/memo-chat-composer';
 import { MemoModeTrigger } from '@/components/memo-mode-trigger';
-import { BottomTabInset, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
+import { useTabBar } from '@/context/tab-bar-context';
 import { sendMemoChatMessage } from '@/services/memo-webhooks';
 import type { MemoChatWebhookResponse, MemoMode, MemoStatus } from '@/types/memo';
 import { useAuth } from '@/providers/auth-provider';
 
 const STATUS_COPY: Record<MemoStatus, string> = {
-  off: 'Lista',
+  off: '¡Hablemos!',
   listening: 'Escuchando',
   thinking: 'Pensando',
   speaking: 'Hablando',
@@ -51,6 +62,7 @@ function getReplyFromWebhook(response: MemoChatWebhookResponse) {
 
 export default function ProtectedHomeScreen() {
   const { profile, user } = useAuth();
+  const { setIsTabBarHidden } = useTabBar();
   const [mode, setMode] = useState<MemoMode>(null);
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -60,6 +72,29 @@ export default function ProtectedHomeScreen() {
 
   const pulseProgress = useSharedValue(0);
   const status = getMemoStatus(mode, isSending, latestReply);
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsTabBarHidden(true);
+      return () => setIsTabBarHidden(false);
+    }, [setIsTabBarHidden])
+  );
+
+  const revealTabBarGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetY([-18, 18])
+        .failOffsetX([-24, 24])
+        .onEnd((event) => {
+          'worklet';
+          if (event.translationY < -36) {
+            runOnJS(setIsTabBarHidden)(false);
+          } else if (event.translationY > 36) {
+            runOnJS(setIsTabBarHidden)(true);
+          }
+        }),
+    [setIsTabBarHidden]
+  );
   const displayName = profile?.name || profile?.user_name || user?.email || 'Memo user';
 
   const statusDescription = useMemo(() => {
@@ -151,20 +186,27 @@ export default function ProtectedHomeScreen() {
 
   return (
     <GradientBackground>
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoidingView}
-        behavior={Platform.select({ ios: 'padding', default: undefined })}>
+      <GestureDetector gesture={revealTabBarGesture}>
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoidingView}
+          behavior={Platform.select({ ios: 'padding', default: undefined })}>
         <ScrollView
           style={styles.scroll}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.content}>
           <SafeAreaView style={styles.safeArea}>
             <Animated.View entering={FadeInDown.duration(520).delay(80)} style={styles.header}>
-              <Image
-                source={require('@/assets/MemoLogoNameWhite.png')}
-                style={styles.logo}
-                contentFit="contain"
-              />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Mostrar u ocultar la barra de navegacion"
+                hitSlop={12}
+                onPress={() => setIsTabBarHidden((hidden) => !hidden)}>
+                <Image
+                  source={require('@/assets/MemoLogoNameWhite.png')}
+                  style={styles.logo}
+                  contentFit="contain"
+                />
+              </Pressable>
 
               <MemoActionButtons
                 onOpenProfile={() => router.push('/profile' as Href)}
@@ -175,7 +217,7 @@ export default function ProtectedHomeScreen() {
 
             <Animated.View entering={FadeInDown.duration(620).delay(160)} style={styles.centerStage}>
               <MemoModeTrigger onSelectMode={handleStartMode} style={styles.trigger}>
-                <Animated.View style={[styles.memoRing, ringAnimatedStyle]} />
+
                 <Animated.View style={[styles.memoBubble, styles[status], bubbleAnimatedStyle]}>
                   <Image
                     source={require('@/assets/MemoIcon1080px.png')}
@@ -203,7 +245,8 @@ export default function ProtectedHomeScreen() {
             </Animated.View>
           </SafeAreaView>
         </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </GestureDetector>
     </GradientBackground>
   );
 }
@@ -217,7 +260,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    paddingBottom: BottomTabInset + Spacing.four,
+    paddingBottom: Spacing.four,
   },
   safeArea: {
     flex: 1,
@@ -296,12 +339,12 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: MemoColors.white,
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '800',
   },
   statusDescription: {
     color: 'rgba(255,255,255,0.66)',
-    fontSize: 14,
+    fontSize: 24,
     fontWeight: '600',
     textAlign: 'center',
   },

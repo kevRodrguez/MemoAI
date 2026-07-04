@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: MemoColors.white,
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: '800',
     lineHeight: 42,
   },

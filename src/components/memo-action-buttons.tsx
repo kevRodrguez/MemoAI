@@ -24,11 +24,6 @@ export function MemoActionButtons({
   return (
     <View style={styles.actions}>
       <ActionButton
-        label="Perfil"
-        symbol={{ ios: 'person.crop.circle', android: 'account_circle', web: 'account_circle' }}
-        onPress={onOpenProfile}
-      />
-      <ActionButton
         label="Llamada"
         symbol={{ ios: 'phone.fill', android: 'call', web: 'call' }}
         onPress={onStartCall}
@@ -37,6 +32,11 @@ export function MemoActionButtons({
         label="Escucha"
         symbol={{ ios: 'waveform', android: 'graphic_eq', web: 'graphic_eq' }}
         onPress={onStartListen}
+      />
+      <ActionButton
+        label="Perfil"
+        symbol={{ ios: 'person.crop.circle', android: 'account_circle', web: 'account_circle' }}
+        onPress={onOpenProfile}
       />
     </View>
   );

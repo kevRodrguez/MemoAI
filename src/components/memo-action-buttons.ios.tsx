@@ -24,12 +24,6 @@ export function MemoActionButtons({
     <Host matchContents style={styles.host}>
       <HStack spacing={8}>
         <Button
-          label="Perfil"
-          systemImage="person.crop.circle"
-          modifiers={modifiers}
-          onPress={onOpenProfile}
-        />
-        <Button
           label="Llamada con Memo"
           systemImage="phone.fill"
           modifiers={modifiers}
@@ -40,6 +34,12 @@ export function MemoActionButtons({
           systemImage="waveform"
           modifiers={modifiers}
           onPress={onStartListen}
+        />
+        <Button
+          label="Perfil"
+          systemImage="person.crop.circle"
+          modifiers={modifiers}
+          onPress={onOpenProfile}
         />
       </HStack>
     </Host>
