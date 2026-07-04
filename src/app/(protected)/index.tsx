@@ -21,11 +21,11 @@ export default function ProtectedHomeScreen() {
   const { profile, user, loading, signOut } = useAuth();
   const displayName = profile?.name || profile?.user_name || user?.email || 'Memo user';
   const [isSignOutButtonPressed, setIsSignOutButtonPressed] = useState(false);
-  const almaProgress = useSharedValue(0);
+  const MemoProgress = useSharedValue(0);
   const signOutButtonScale = useSharedValue(1);
 
   useEffect(() => {
-    almaProgress.value = withRepeat(
+    MemoProgress.value = withRepeat(
       withTiming(1, {
         duration: 2400,
         easing: Easing.inOut(Easing.cubic),
@@ -33,7 +33,7 @@ export default function ProtectedHomeScreen() {
       -1,
       true
     );
-  }, [almaProgress]);
+  }, [MemoProgress]);
 
   useEffect(() => {
     signOutButtonScale.value = withTiming(isSignOutButtonPressed ? 0.98 : 1, {
@@ -41,17 +41,17 @@ export default function ProtectedHomeScreen() {
     });
   }, [isSignOutButtonPressed, signOutButtonScale]);
 
-  const almaAnimatedStyle = useAnimatedStyle(() => ({
-    shadowOpacity: 0.24 + almaProgress.value * 0.22,
+  const MemoAnimatedStyle = useAnimatedStyle(() => ({
+    shadowOpacity: 0.24 + MemoProgress.value * 0.22,
     transform: [
-      { translateY: -4 * almaProgress.value },
-      { scale: 1 + almaProgress.value * 0.035 },
+      { translateY: -4 * MemoProgress.value },
+      { scale: 1 + MemoProgress.value * 0.035 },
     ],
   }));
 
   const statusDotAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: 0.56 + almaProgress.value * 0.44,
-    transform: [{ scale: 0.85 + almaProgress.value * 0.28 }],
+    opacity: 0.56 + MemoProgress.value * 0.44,
+    transform: [{ scale: 0.85 + MemoProgress.value * 0.28 }],
   }));
 
   const signOutButtonAnimatedStyle = useAnimatedStyle(() => ({
@@ -71,8 +71,8 @@ export default function ProtectedHomeScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInDown.duration(620).delay(160)} style={styles.hero}>
-            <Animated.View style={[styles.almaOrb, almaAnimatedStyle]}>
-              <Image source={require('@/assets/MemoIcon1080px.png')} style={styles.almaLogo} contentFit="contain" />
+            <Animated.View style={[styles.MemoOrb, MemoAnimatedStyle]}>
+              <Image source={require('@/assets/MemoIcon1080px.png')} style={styles.MemoLogo} contentFit="contain" />
             </Animated.View>
 
             <Text style={styles.eyebrow}>{`Hola, ${displayName}`}</Text>
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   hero: {
     gap: Spacing.three,
   },
-  almaOrb: {
+  MemoOrb: {
     width: 144,
     height: 144,
     alignItems: 'center',
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(74,168,254,0.42)',
   },
-  almaLogo: {
+  MemoLogo: {
     width: 92,
     height: 92,
   },

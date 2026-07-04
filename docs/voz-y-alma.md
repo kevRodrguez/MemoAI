@@ -1,8 +1,8 @@
-# Voz y Alma
+# Voz y Memo
 
 ## Objetivo
 
-La capa de voz permite que Memo capture reuniones y que Alma funcione como agente conversacional. La experiencia debe permitir trabajar sin tocar el teclado durante discusiones presenciales.
+La capa de voz permite que Memo capture reuniones y que Memo funcione como agente conversacional. La experiencia debe permitir trabajar sin tocar el teclado durante discusiones presenciales.
 
 ## Estado actual
 
@@ -13,20 +13,20 @@ No existe implementacion de captura de audio, transcripcion, ElevenLabs ni agent
 Memo tendra dos modos de voz con ElevenLabs:
 
 - Modo escucha: usa Scribe v2 realtime para capturar y transcribir reuniones.
-- Modo conversacional: usa ElevenLabs para interaccion directa con Alma.
+- Modo conversacional: usa ElevenLabs para interaccion directa con Memo.
 
 El modo escucha esta orientado a reuniones completas. El modo conversacional esta orientado a preguntas o respuestas puntuales con baja latencia.
 
-## Alma como interfaz
+## Memo como interfaz
 
-Alma vive en el home y funciona como el punto principal de interaccion. Debe tener un control claro de sesion para iniciar o detener escucha.
+Memo vive en el home y funciona como el punto principal de interaccion. Debe tener un control claro de sesion para iniciar o detener escucha.
 
 Estados funcionales:
 
 - Apagada: no hay sesion activa.
 - Escuchando: hay captura o espera activa.
 - Pensando: se esta procesando informacion.
-- Hablando: Alma esta respondiendo.
+- Hablando: Memo esta respondiendo.
 
 La UI debe representar estos estados con animacion y feedback breve. No se debe depender solo de texto para comunicar el estado.
 

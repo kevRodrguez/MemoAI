@@ -29,13 +29,13 @@ Componentes base:
 
 Antes de agregar o cambiar APIs de Expo, consultar siempre la documentacion exacta de SDK 57:
 
-https://docs.expo.dev/versions/v57.0.0/
+<https://docs.expo.dev/versions/v57.0.0/>
 
 ## Navegacion
 
 La navegacion actual tiene dos tabs:
 
-- Home: futuro lugar principal de Alma y del estado de sesion.
+- Home: futuro lugar principal de Memo y del estado de sesion.
 - Explore: pantalla de template que deberia ser reemplazada o reutilizada cuando exista una seccion real.
 
 La estructura usa rutas file-based de Expo Router. Nuevas pantallas deben vivir bajo `src/app/` y respetar las convenciones de Expo Router SDK 57.
@@ -68,7 +68,7 @@ Assets relevantes:
 ## Pendiente
 
 - Reemplazar contenido del template por experiencia Memo.
-- Definir componentes reales para Alma.
+- Definir componentes reales para Memo.
 - Agregar cliente Supabase.
 - Agregar flujos de autenticacion.
 - Agregar pantallas para reuniones y tareas personales.

@@ -35,7 +35,7 @@ El frontend debe encargarse de:
 - Capturar o seleccionar audio desde el dispositivo cuando el flujo lo requiera.
 - Mostrar estado de captura, procesamiento y resultados.
 - Renderizar reuniones, resumenes, transcripciones y tareas personales.
-- Mostrar Alma como interfaz de agente con estados claros.
+- Mostrar Memo como interfaz de agente con estados claros.
 - Enviar y consultar informacion de Supabase usando contratos tipados.
 
 ## Supabase
@@ -54,7 +54,7 @@ El audio crudo se guarda en bucket de Supabase. En la tabla de reuniones se pers
 La capa de voz objetivo usa ElevenLabs:
 
 - Modo escucha: Scribe v2 realtime para capturar/transcribir reuniones.
-- Modo conversacional: ElevenLabs para interaccion directa con Alma.
+- Modo conversacional: ElevenLabs para interaccion directa con Memo.
 
 La documentacion actual no define prompts, herramientas, agentes externos ni workflows operativos.
 
