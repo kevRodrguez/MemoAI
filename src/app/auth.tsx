@@ -1,9 +1,28 @@
-import { Button, Host, Text, TextInput } from '@expo/ui';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  LayoutChangeEvent,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MemoColors } from '@/assets/colors';
@@ -20,6 +39,8 @@ export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [localMessage, setLocalMessage] = useState<string | null>(null);
+  const [segmentWidth, setSegmentWidth] = useState(0);
+  const segmentIndex = useSharedValue(0);
   const isSignUp = mode === 'signUp';
   const signInSegmentTextStyle = !isSignUp
     ? { ...styles.segmentText, ...styles.segmentTextActive }
@@ -27,6 +48,25 @@ export default function AuthScreen() {
   const signUpSegmentTextStyle = isSignUp
     ? { ...styles.segmentText, ...styles.segmentTextActive }
     : styles.segmentText;
+
+  useEffect(() => {
+    segmentIndex.value = withTiming(isSignUp ? 1 : 0, {
+      duration: 280,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [isSignUp, segmentIndex]);
+
+  const segmentIndicatorStyle = useAnimatedStyle(() => {
+    const itemWidth = (segmentWidth - 8) / 2;
+    return {
+      width: itemWidth,
+      transform: [{ translateX: segmentIndex.value * itemWidth }],
+    };
+  });
+
+  function handleSegmentLayout(event: LayoutChangeEvent) {
+    setSegmentWidth(event.nativeEvent.layout.width);
+  }
 
   if (session) {
     return <Redirect href="/" />;
@@ -64,12 +104,14 @@ export default function AuthScreen() {
         locations={[0, 0.55, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
+        pointerEvents="none"
         style={styles.bottomGlow}
       />
       <LinearGradient
         colors={['rgba(35,133,255,0.22)', 'rgba(0,0,0,0)']}
         start={{ x: 0, y: 0 }}
         end={{ x: 0.8, y: 0.8 }}
+        pointerEvents="none"
         style={styles.cornerGlow}
       />
 
@@ -82,92 +124,99 @@ export default function AuthScreen() {
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}>
             <View style={styles.brandBlock}>
-              <Image source={require('@/assets/MemoLogoName.png')} style={styles.logo} contentFit="contain" />
-              <Text textStyle={styles.eyebrow}>Asistente de reuniones</Text>
-              <Text textStyle={styles.title}>Tu memoria operativa para cada reunion.</Text>
-              <Text textStyle={styles.subtitle}>
+              <Image
+                source={require('@/assets/MemoLogoNameWhite.png')}
+                style={styles.logo}
+                contentFit="contain"
+              />
+              <Text style={styles.eyebrow}>Asistente de reuniones</Text>
+              <Text style={styles.title}>Tu memoria operativa para cada reunion.</Text>
+              <Text style={styles.subtitle}>
                 Inicia sesion para capturar contexto, compromisos y tareas personales con Alma.
               </Text>
             </View>
 
             <View style={styles.formShell}>
-              <View style={styles.segmentedControl}>
-                <Pressable
-                  onPress={() => setMode('signIn')}
-                  style={[styles.segment, !isSignUp && styles.segmentActive]}>
-                  <Text textStyle={signInSegmentTextStyle}>Entrar</Text>
+              <View style={styles.segmentedControl} onLayout={handleSegmentLayout}>
+                {segmentWidth > 0 && (
+                  <Animated.View style={[styles.segmentIndicator, segmentIndicatorStyle]} />
+                )}
+                <Pressable onPress={() => setMode('signIn')} style={styles.segment}>
+                  <Text style={signInSegmentTextStyle}>Entrar</Text>
                 </Pressable>
-                <Pressable
-                  onPress={() => setMode('signUp')}
-                  style={[styles.segment, isSignUp && styles.segmentActive]}>
-                  <Text textStyle={signUpSegmentTextStyle}>Crear cuenta</Text>
+                <Pressable onPress={() => setMode('signUp')} style={styles.segment}>
+                  <Text style={signUpSegmentTextStyle}>Crear cuenta</Text>
                 </Pressable>
               </View>
 
-              <Host colorScheme="dark" seedColor={MemoColors.mainBlue} style={styles.host}>
-                <View style={styles.fields}>
-                  {isSignUp && (
-                    <>
-                      <TextInput
-                        placeholder="Nombre"
-                        autoCapitalize="words"
-                        autoComplete="name"
-                        defaultValue={name}
-                        onChangeText={setName}
-                        style={styles.nativeInput}
-                        textStyle={styles.nativeInputText}
-                        placeholderTextColor="rgba(255,255,255,0.5)"
-                      />
-                      <TextInput
-                        placeholder="Usuario"
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        defaultValue={userName}
-                        onChangeText={setUserName}
-                        style={styles.nativeInput}
-                        textStyle={styles.nativeInputText}
-                        placeholderTextColor="rgba(255,255,255,0.5)"
-                      />
-                    </>
-                  )}
+              <Animated.View
+                layout={LinearTransition.springify().damping(18).stiffness(180)}
+                style={styles.fields}>
+                {isSignUp && (
+                  <Animated.View
+                    entering={FadeIn.duration(240).easing(Easing.inOut(Easing.ease))}
+                    exiting={FadeOut.duration(180).easing(Easing.inOut(Easing.ease))}
+                    style={styles.signUpFields}>
+                    <TextInput
+                      placeholder="Nombre"
+                      autoCapitalize="words"
+                      autoComplete="name"
+                      value={name}
+                      onChangeText={setName}
+                      style={styles.nativeInput}
+                      placeholderTextColor="rgba(255,255,255,0.5)"
+                    />
+                    <TextInput
+                      placeholder="Usuario"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      value={userName}
+                      onChangeText={setUserName}
+                      style={styles.nativeInput}
+                      placeholderTextColor="rgba(255,255,255,0.5)"
+                    />
+                  </Animated.View>
+                )}
 
-                  <TextInput
-                    placeholder="Email"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    autoComplete="email"
-                    defaultValue={email}
-                    onChangeText={setEmail}
-                    style={styles.nativeInput}
-                    textStyle={styles.nativeInputText}
-                    placeholderTextColor="rgba(255,255,255,0.5)"
-                  />
-                  <TextInput
-                    placeholder="Password"
-                    secureTextEntry
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    autoComplete={isSignUp ? 'new-password' : 'off'}
-                    defaultValue={password}
-                    onChangeText={setPassword}
-                    style={styles.nativeInput}
-                    textStyle={styles.nativeInputText}
-                    placeholderTextColor="rgba(255,255,255,0.5)"
-                  />
+                <TextInput
+                  placeholder="Email"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="email"
+                  value={email}
+                  onChangeText={setEmail}
+                  style={styles.nativeInput}
+                  placeholderTextColor="rgba(255,255,255,0.5)"
+                />
+                <TextInput
+                  placeholder="Password"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete={isSignUp ? 'new-password' : 'off'}
+                  value={password}
+                  onChangeText={setPassword}
+                  style={styles.nativeInput}
+                  placeholderTextColor="rgba(255,255,255,0.5)"
+                />
 
-                  {(localMessage || errorMessage) && (
-                    <Text textStyle={styles.errorText}>{localMessage ?? errorMessage ?? ''}</Text>
-                  )}
+                {(localMessage || errorMessage) && (
+                  <Text style={styles.errorText}>{localMessage ?? errorMessage ?? ''}</Text>
+                )}
 
-                  <Button
-                    label={loading ? 'Procesando...' : isSignUp ? 'Crear cuenta' : 'Entrar'}
-                    onPress={submit}
-                    disabled={loading || initializing}
-                    style={styles.primaryButton}
-                  />
-                </View>
-              </Host>
+                <Pressable
+                  onPress={submit}
+                  disabled={loading || initializing}
+                  style={({ pressed }) => [
+                    styles.primaryButton,
+                    (pressed || loading || initializing) && styles.primaryButtonPressed,
+                  ]}>
+                  <Text style={styles.primaryButtonText}>
+                    {loading ? 'Procesando...' : isSignUp ? 'Crear cuenta' : 'Entrar'}
+                  </Text>
+                </Pressable>
+              </Animated.View>
             </View>
 
             {initializing && (
@@ -217,8 +266,8 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   logo: {
-    width: 172,
-    height: 48,
+    width: 200,
+    height: 68,
   },
   eyebrow: {
     color: MemoColors.secondaryBlue,
@@ -249,6 +298,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.07)',
     borderRadius: 18,
     padding: 4,
+    position: 'relative',
+  },
+  segmentIndicator: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    bottom: 4,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
   segment: {
     flex: 1,
@@ -256,9 +314,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,
-  },
-  segmentActive: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    zIndex: 1,
   },
   segmentText: {
     color: 'rgba(255,255,255,0.62)',
@@ -269,10 +325,11 @@ const styles = StyleSheet.create({
   segmentTextActive: {
     color: MemoColors.white,
   },
-  host: {
-    width: '100%',
-  },
   fields: {
+    gap: Spacing.three,
+    overflow: 'hidden',
+  },
+  signUpFields: {
     gap: Spacing.three,
   },
   nativeInput: {
@@ -283,8 +340,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.14)',
     backgroundColor: 'rgba(255,255,255,0.08)',
     paddingHorizontal: 16,
-  },
-  nativeInputText: {
     color: MemoColors.white,
     fontSize: 16,
   },
@@ -298,6 +353,16 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 16,
     backgroundColor: MemoColors.mainBlue,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryButtonPressed: {
+    opacity: 0.72,
+  },
+  primaryButtonText: {
+    color: MemoColors.white,
+    fontSize: 16,
+    fontWeight: '800',
   },
   loadingOverlay: {
     alignItems: 'center',

@@ -1,7 +1,6 @@
-import { Button, Host, Text } from '@expo/ui';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MemoColors } from '@/assets/colors';
@@ -18,11 +17,13 @@ export default function ProtectedHomeScreen() {
         colors={['rgba(35,133,255,0.20)', 'rgba(3,7,18,0)']}
         start={{ x: 0, y: 0 }}
         end={{ x: 0.8, y: 0.8 }}
+        pointerEvents="none"
         style={styles.topGlow}
       />
       <LinearGradient
         colors={['rgba(3,7,18,0)', 'rgba(35,133,255,0.22)', 'rgba(74,168,254,0.38)']}
         locations={[0, 0.6, 1]}
+        pointerEvents="none"
         style={styles.bottomGlow}
       />
 
@@ -32,7 +33,7 @@ export default function ProtectedHomeScreen() {
             <Image source={require('@/assets/MemoLogoName.png')} style={styles.logo} contentFit="contain" />
             <View style={styles.statusPill}>
               <View style={styles.statusDot} />
-              <Text textStyle={styles.statusText}>Sesion activa</Text>
+              <Text style={styles.statusText}>Sesion activa</Text>
             </View>
           </View>
 
@@ -41,29 +42,29 @@ export default function ProtectedHomeScreen() {
               <Image source={require('@/assets/MemoIcon1080px.png')} style={styles.almaLogo} contentFit="contain" />
             </View>
 
-            <Text textStyle={styles.eyebrow}>{`Hola, ${displayName}`}</Text>
-            <Text textStyle={styles.title}>Memo esta lista para tu proxima reunion.</Text>
-            <Text textStyle={styles.subtitle}>
+            <Text style={styles.eyebrow}>{`Hola, ${displayName}`}</Text>
+            <Text style={styles.title}>Memo esta lista para tu proxima reunion.</Text>
+            <Text style={styles.subtitle}>
               Auth y perfil ya estan conectados. El siguiente paso natural es capturar audio,
               generar transcripcion y convertir compromisos en tareas personales.
             </Text>
           </View>
 
           <View style={styles.profilePanel}>
-            <Text textStyle={styles.panelTitle}>Perfil</Text>
+            <Text style={styles.panelTitle}>Perfil</Text>
             <ProfileRow label="Nombre" value={profile?.name ?? 'Pendiente'} />
             <ProfileRow label="Usuario" value={profile?.user_name ?? 'Pendiente'} />
             <ProfileRow label="Email" value={profile?.email ?? user?.email ?? 'Pendiente'} />
 
-            <Host colorScheme="dark" seedColor={MemoColors.mainBlue} style={styles.host}>
-              <Button
-                label={loading ? 'Cerrando...' : 'Cerrar sesion'}
-                onPress={signOut}
-                disabled={loading}
-                variant="outlined"
-                style={styles.signOutButton}
-              />
-            </Host>
+            <Pressable
+              onPress={signOut}
+              disabled={loading}
+              style={({ pressed }) => [
+                styles.signOutButton,
+                (pressed || loading) && styles.signOutButtonPressed,
+              ]}>
+              <Text style={styles.signOutButtonText}>{loading ? 'Cerrando...' : 'Cerrar sesion'}</Text>
+            </Pressable>
           </View>
         </SafeAreaView>
       </ScrollView>
@@ -74,8 +75,8 @@ export default function ProtectedHomeScreen() {
 function ProfileRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.profileRow}>
-      <Text textStyle={styles.profileLabel}>{label}</Text>
-      <Text textStyle={styles.profileValue} numberOfLines={1}>
+      <Text style={styles.profileLabel}>{label}</Text>
+      <Text style={styles.profileValue} numberOfLines={1}>
         {value}
       </Text>
     </View>
@@ -203,13 +204,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  host: {
-    width: '100%',
-  },
   signOutButton: {
     width: '100%',
     height: 48,
     borderRadius: 16,
+    borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.24)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  signOutButtonPressed: {
+    opacity: 0.72,
+  },
+  signOutButtonText: {
+    color: MemoColors.white,
+    fontSize: 15,
+    fontWeight: '800',
   },
 });
