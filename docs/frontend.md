@@ -7,8 +7,10 @@ El frontend esta basado en Expo SDK 57 con Expo Router. El codigo de aplicacion 
 Entrypoints actuales:
 
 - `src/app/_layout.tsx`: configura tema, splash overlay y tabs.
-- `src/app/index.tsx`: pantalla Home del template.
-- `src/app/explore.tsx`: pantalla Explore del template.
+- `src/app/(protected)/index.tsx`: home principal de Memo.
+- `src/app/(protected)/meetings.tsx`: placeholder protegido de reuniones.
+- `src/app/(protected)/tasks.tsx`: placeholder protegido de tareas personales.
+- `src/app/(protected)/profile.tsx`: placeholder protegido de perfil.
 
 Componentes base:
 
@@ -25,6 +27,7 @@ Componentes base:
 - TypeScript.
 - Expo Router.
 - `expo-image`, `expo-symbols`, `expo-splash-screen`, `expo-glass-effect`.
+- `@expo/ui` para composer y controles nativos disponibles.
 - React Native Reanimated 4.
 
 Antes de agregar o cambiar APIs de Expo, consultar siempre la documentacion exacta de SDK 57:
@@ -33,12 +36,31 @@ Antes de agregar o cambiar APIs de Expo, consultar siempre la documentacion exac
 
 ## Navegacion
 
-La navegacion actual tiene dos tabs:
+La navegacion actual tiene tres tabs protegidos:
 
-- Home: futuro lugar principal de Memo y del estado de sesion.
-- Explore: pantalla de template que deberia ser reemplazada o reutilizada cuando exista una seccion real.
+- Meetings: placeholder de reuniones recientes.
+- Chat: home principal de Memo.
+- Tasks: placeholder de tareas personales.
 
-La estructura usa rutas file-based de Expo Router. Nuevas pantallas deben vivir bajo `src/app/` y respetar las convenciones de Expo Router SDK 57.
+La pantalla `profile` vive bajo el grupo protegido y se abre desde el header del home. Nuevas
+pantallas deben vivir bajo `src/app/` y respetar las convenciones de Expo Router SDK 57.
+
+## Home de Memo
+
+El home protegido usa `GradientBackground`, logo de Memo en blanco, acciones de perfil/llamada/
+escucha y una bubble central interactiva con estados locales:
+
+- `off`
+- `listening`
+- `thinking`
+- `speaking`
+
+En iOS, las acciones de header usan `@expo/ui/swift-ui` desde componentes `.ios.tsx`. Las rutas
+no deben importar `@expo/ui/swift-ui` directamente para mantener fallback web/Android. En otras
+plataformas, los botones usan React Native y `expo-symbols`.
+
+El composer inferior envia mensajes a `EXPO_PUBLIC_N8N_CHAT_WEBHOOK_URL` mediante el servicio
+tipado `src/services/memo-webhooks.ts`.
 
 ## Tema y assets
 
@@ -55,6 +77,7 @@ Assets relevantes:
 
 - `assets/MemoIcon1080px.png`.
 - `assets/MemoLogoName.png`.
+- `assets/MemoLogoNameWhite.png`.
 - Iconos y splash en `assets/images/`.
 
 ## Convenciones

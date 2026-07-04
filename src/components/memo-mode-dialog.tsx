@@ -1,13 +1,13 @@
 import { Alert } from 'react-native';
 
-import type { AlmaMode } from '@/types/alma';
+import type { MemoMode } from '@/types/memo';
 
-type ShowAlmaModeDialogInput = {
-  onSelectMode: (mode: Exclude<AlmaMode, null>) => void;
+type ShowMemoModeDialogInput = {
+  onSelectMode: (mode: Exclude<MemoMode, null>) => void;
 };
 
-export function showAlmaModeDialog({ onSelectMode }: ShowAlmaModeDialogInput) {
-  Alert.alert('Activar Alma', 'Elige como quieres iniciar la sesion.', [
+export function showMemoModeDialog({ onSelectMode }: ShowMemoModeDialogInput) {
+  Alert.alert('Activar Memo', 'Elige como quieres iniciar la sesion.', [
     {
       text: 'Llamada con Memo',
       onPress: () => onSelectMode('call'),

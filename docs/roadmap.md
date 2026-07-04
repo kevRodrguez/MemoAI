@@ -13,6 +13,7 @@ Objetivo:
 - Definir navegacion real de la app.
 - Consolidar tema visual dark-first.
 - Mantener compatibilidad con Expo SDK 57.
+- Preparar contratos n8n iniciales para chat y procesamiento de transcripciones.
 
 ## Fase 2: Supabase
 
@@ -32,6 +33,7 @@ Objetivo:
 - Integrar ElevenLabs Scribe v2 realtime para modo escucha.
 - Integrar modo conversacional de ElevenLabs para Memo.
 - Definir estados visuales de sesion y procesamiento.
+- Conectar el cierre de escucha al contrato de procesamiento cuando exista transcripcion real.
 
 ## Fase 4: Inteligencia de reuniones
 

@@ -40,6 +40,32 @@ La prioridad de documentacion y desarrollo debe favorecer primero:
 - Modelo claro de tareas personales.
 - Memo como interfaz funcional, antes de cerrar mascota o identidad visual final.
 
+## Contrato n8n acotado
+
+El home de Memo puede enviar mensajes de chat a un webhook de n8n configurado por ambiente.
+Este contrato es una integracion tecnica inicial para prototipar respuesta y procesamiento, no
+un backend principal ni una definicion completa de automatizaciones externas.
+
+Payload minimo de chat:
+
+```json
+{
+  "message": "texto del usuario",
+  "userId": "uuid-auth-o-null",
+  "profileId": "uuid-profile-o-null",
+  "userEmail": "correo-o-null",
+  "sentAt": "ISO-8601",
+  "source": "memo-home"
+}
+```
+
+La respuesta puede incluir `reply`, `message` o `text` para mostrarse como ultima respuesta de
+Memo. Si falta `EXPO_PUBLIC_N8N_CHAT_WEBHOOK_URL`, la app no debe fallar al iniciar; debe
+mostrar un error amigable cuando el usuario intente enviar el mensaje.
+
 ## Fuera de alcance
 
-Por ahora no se debe disenar ni implementar funcionamiento de Zavu, n8n, integraciones de calendario ni CRUD de contactos. Tampoco se debe asumir un backend propio como parte del MVP de la app.
+Por ahora no se debe disenar ni implementar funcionamiento de Zavu, integraciones de calendario
+ni CRUD de contactos. n8n queda limitado al contrato de webhook descrito arriba hasta que el
+producto redefina una automatizacion mas amplia. Tampoco se debe asumir un backend propio como
+parte del MVP de la app.

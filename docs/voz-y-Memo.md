@@ -6,7 +6,8 @@ La capa de voz permite que Memo capture reuniones y que Memo funcione como agent
 
 ## Estado actual
 
-No existe implementacion de captura de audio, transcripcion, ElevenLabs ni agente conversacional en el repo actual. Este documento define la direccion objetivo.
+No existe implementacion de captura de audio, transcripcion realtime ni ElevenLabs en el repo actual.
+El home ya prepara estados visuales locales de Memo y contratos de webhook para chat/procesamiento.
 
 ## Modos de voz
 
@@ -54,6 +55,8 @@ Flujo objetivo:
 - Libreria exacta de captura de audio en Expo SDK 57.
 - Permisos nativos de microfono.
 - Estrategia de streaming desde React Native.
+- Conexion real de Scribe v2 realtime al modo escucha.
+- Conexion real del modo conversacional con ElevenLabs.
 - Manejo de cortes de red.
 - UX de consentimiento y grabacion activa.
 - Contrato final entre transcripcion, resumen y creacion de tareas.

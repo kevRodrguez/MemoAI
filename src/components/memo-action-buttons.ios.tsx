@@ -2,17 +2,17 @@ import { Button, HStack, Host } from '@expo/ui/swift-ui';
 import { buttonBorderShape, buttonStyle, controlSize, labelStyle } from '@expo/ui/swift-ui/modifiers';
 import { StyleSheet } from 'react-native';
 
-type AlmaActionButtonsProps = {
+type MemoActionButtonsProps = {
   onOpenProfile: () => void;
   onStartCall: () => void;
   onStartListen: () => void;
 };
 
-export function AlmaActionButtons({
+export function MemoActionButtons({
   onOpenProfile,
   onStartCall,
   onStartListen,
-}: AlmaActionButtonsProps) {
+}: MemoActionButtonsProps) {
   const modifiers = [
     buttonStyle('glass'),
     controlSize('large'),

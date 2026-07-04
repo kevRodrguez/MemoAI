@@ -22,6 +22,7 @@ React Native / Expo app
   -> Supabase Auth
   -> Supabase API / Postgres
   -> Supabase Storage para audio
+  -> n8n webhooks para chat/procesamiento inicial
   -> ElevenLabs para voz realtime y conversacional
 ```
 
@@ -57,6 +58,33 @@ La capa de voz objetivo usa ElevenLabs:
 - Modo conversacional: ElevenLabs para interaccion directa con Memo.
 
 La documentacion actual no define prompts, herramientas, agentes externos ni workflows operativos.
+
+## n8n
+
+n8n se incorpora como contrato explicito y acotado para esta etapa:
+
+- `EXPO_PUBLIC_N8N_CHAT_WEBHOOK_URL`: recibe mensajes enviados desde el composer del home.
+- `EXPO_PUBLIC_N8N_TRANSCRIPT_WEBHOOK_URL`: queda preparado para recibir transcripciones al cerrar
+  una sesion de escucha.
+
+El frontend envia JSON directamente a esos webhooks. Si una URL no esta configurada, el arranque
+de la app debe continuar y el error debe aparecer solamente cuando el usuario intente usar la
+accion correspondiente.
+
+Contrato preparado para cierre de escucha:
+
+```json
+{
+  "transcript": "texto transcrito",
+  "meetingType": "LIVE",
+  "userId": "uuid-auth-o-null",
+  "profileId": "uuid-profile-o-null",
+  "endedAt": "ISO-8601"
+}
+```
+
+Este contrato no reemplaza Supabase como capa principal de datos. El procesamiento definitivo,
+persistencia de resumenes y extraccion de tareas siguen pendientes de definicion.
 
 ## Backend propio futuro
 

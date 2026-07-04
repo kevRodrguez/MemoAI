@@ -1,18 +1,18 @@
 import { Button, ConfirmationDialog, Host, Text } from '@expo/ui/swift-ui';
 import { StyleSheet, View } from 'react-native';
 
-import type { AlmaMode } from '@/types/alma';
+import type { MemoMode } from '@/types/memo';
 
-type AlmaModeDialogProps = {
+type MemoModeDialogProps = {
   children: React.ReactNode;
-  onSelectMode: (mode: Exclude<AlmaMode, null>) => void;
+  onSelectMode: (mode: Exclude<MemoMode, null>) => void;
 };
 
-export function AlmaModeDialog({ children, onSelectMode }: AlmaModeDialogProps) {
+export function MemoModeDialog({ children, onSelectMode }: MemoModeDialogProps) {
   return (
     <View style={styles.wrapper}>
       <Host matchContents style={styles.host}>
-        <ConfirmationDialog title="Activar Alma">
+        <ConfirmationDialog title="Activar Memo">
           <ConfirmationDialog.Trigger>{children}</ConfirmationDialog.Trigger>
           <ConfirmationDialog.Message>
             <Text>Elige como quieres iniciar la sesion.</Text>
@@ -28,8 +28,8 @@ export function AlmaModeDialog({ children, onSelectMode }: AlmaModeDialogProps) 
   );
 }
 
-export function showAlmaModeDialog() {
-  // The iOS implementation is rendered through AlmaModeDialog.
+export function showMemoModeDialog() {
+  // The iOS implementation is rendered through MemoModeDialog.
 }
 
 const styles = StyleSheet.create({

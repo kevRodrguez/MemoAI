@@ -4,8 +4,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { MemoColors } from '@/assets/colors';
 
 type MemoChatComposerProps = {
-  value: string;
   loading: boolean;
+  resetKey: number;
   errorMessage: string | null;
   latestReply: string | null;
   onChangeText: (value: string) => void;
@@ -13,8 +13,8 @@ type MemoChatComposerProps = {
 };
 
 export function MemoChatComposer({
-  value,
   loading,
+  resetKey,
   errorMessage,
   latestReply,
   onChangeText,
@@ -34,7 +34,7 @@ export function MemoChatComposer({
       <Host matchContents={{ vertical: true }} style={styles.host}>
         <Row spacing={8}>
           <TextInput
-            value={value}
+            key={resetKey}
             editable={!loading}
             placeholder="Escribele a Memo..."
             placeholderTextColor="rgba(255,255,255,0.48)"

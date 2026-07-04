@@ -1,9 +1,10 @@
 import { SymbolView } from 'expo-symbols';
+import type { ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { MemoColors } from '@/assets/colors';
 
-type AlmaActionButtonsProps = {
+type MemoActionButtonsProps = {
   onOpenProfile: () => void;
   onStartCall: () => void;
   onStartListen: () => void;
@@ -11,19 +12,15 @@ type AlmaActionButtonsProps = {
 
 type ActionButtonProps = {
   label: string;
-  symbol: {
-    ios: string;
-    android: string;
-    web: string;
-  };
+  symbol: ComponentProps<typeof SymbolView>['name'];
   onPress: () => void;
 };
 
-export function AlmaActionButtons({
+export function MemoActionButtons({
   onOpenProfile,
   onStartCall,
   onStartListen,
-}: AlmaActionButtonsProps) {
+}: MemoActionButtonsProps) {
   return (
     <View style={styles.actions}>
       <ActionButton

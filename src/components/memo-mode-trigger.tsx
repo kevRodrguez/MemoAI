@@ -1,20 +1,20 @@
 import { Pressable, StyleProp, ViewStyle } from 'react-native';
 
-import { showAlmaModeDialog } from '@/components/alma-mode-dialog';
-import type { AlmaMode } from '@/types/alma';
+import { showMemoModeDialog } from '@/components/memo-mode-dialog';
+import type { MemoMode } from '@/types/memo';
 
-type AlmaModeTriggerProps = {
+type MemoModeTriggerProps = {
   children: React.ReactNode;
-  onSelectMode: (mode: Exclude<AlmaMode, null>) => void;
+  onSelectMode: (mode: Exclude<MemoMode, null>) => void;
   style?: StyleProp<ViewStyle>;
 };
 
-export function AlmaModeTrigger({ children, onSelectMode, style }: AlmaModeTriggerProps) {
+export function MemoModeTrigger({ children, onSelectMode, style }: MemoModeTriggerProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Activar Alma"
-      onPress={() => showAlmaModeDialog({ onSelectMode })}
+      accessibilityLabel="Activar Memo"
+      onPress={() => showMemoModeDialog({ onSelectMode })}
       style={style}>
       {children}
     </Pressable>

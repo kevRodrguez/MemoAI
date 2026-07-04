@@ -2,7 +2,7 @@ import type {
   MemoChatWebhookRequest,
   MemoChatWebhookResponse,
   MemoTranscriptWebhookRequest,
-} from '@/types/alma';
+} from '@/types/memo';
 
 const CHAT_WEBHOOK_URL = process.env.EXPO_PUBLIC_N8N_CHAT_WEBHOOK_URL;
 const TRANSCRIPT_WEBHOOK_URL = process.env.EXPO_PUBLIC_N8N_TRANSCRIPT_WEBHOOK_URL;

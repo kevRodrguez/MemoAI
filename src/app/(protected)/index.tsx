@@ -1,9 +1,9 @@
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { type Href, router } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
-  FadeIn,
   FadeInDown,
   useAnimatedStyle,
   useSharedValue,
@@ -14,130 +14,220 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MemoColors } from '@/assets/colors';
 import { GradientBackground } from '@/components/gradient-background';
+import { MemoActionButtons } from '@/components/memo-action-buttons';
+import { MemoChatComposer } from '@/components/memo-chat-composer';
+import { MemoModeTrigger } from '@/components/memo-mode-trigger';
 import { BottomTabInset, Spacing } from '@/constants/theme';
+import { sendMemoChatMessage } from '@/services/memo-webhooks';
+import type { MemoChatWebhookResponse, MemoMode, MemoStatus } from '@/types/memo';
 import { useAuth } from '@/providers/auth-provider';
 
+const STATUS_COPY: Record<MemoStatus, string> = {
+  off: 'Lista',
+  listening: 'Escuchando',
+  thinking: 'Pensando',
+  speaking: 'Hablando',
+};
+
+function getMemoStatus(mode: MemoMode, isSending: boolean, latestReply: string | null): MemoStatus {
+  if (isSending) {
+    return 'thinking';
+  }
+
+  if (latestReply) {
+    return 'speaking';
+  }
+
+  if (mode === 'call' || mode === 'listen') {
+    return 'listening';
+  }
+
+  return 'off';
+}
+
+function getReplyFromWebhook(response: MemoChatWebhookResponse) {
+  return response.reply ?? response.message ?? response.text ?? null;
+}
+
 export default function ProtectedHomeScreen() {
-  const { profile, user, loading, signOut } = useAuth();
+  const { profile, user } = useAuth();
+  const [mode, setMode] = useState<MemoMode>(null);
+  const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [composerResetKey, setComposerResetKey] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [latestReply, setLatestReply] = useState<string | null>(null);
+
+  const pulseProgress = useSharedValue(0);
+  const status = getMemoStatus(mode, isSending, latestReply);
   const displayName = profile?.name || profile?.user_name || user?.email || 'Memo user';
-  const [isSignOutButtonPressed, setIsSignOutButtonPressed] = useState(false);
-  const MemoProgress = useSharedValue(0);
-  const signOutButtonScale = useSharedValue(1);
+
+  const statusDescription = useMemo(() => {
+    if (status === 'listening' && mode === 'call') {
+      return 'Modo llamada preparado';
+    }
+
+    if (status === 'listening' && mode === 'listen') {
+      return 'Modo escucha preparado';
+    }
+
+    if (status === 'thinking') {
+      return 'Enviando contexto a n8n';
+    }
+
+    if (status === 'speaking') {
+      return 'Respuesta recibida';
+    }
+
+    return `Hola, ${displayName}`;
+  }, [displayName, mode, status]);
 
   useEffect(() => {
-    MemoProgress.value = withRepeat(
+    pulseProgress.value = withRepeat(
       withTiming(1, {
-        duration: 2400,
+        duration: status === 'off' ? 3200 : 1700,
         easing: Easing.inOut(Easing.cubic),
       }),
       -1,
       true
     );
-  }, [MemoProgress]);
+  }, [pulseProgress, status]);
 
-  useEffect(() => {
-    signOutButtonScale.value = withTiming(isSignOutButtonPressed ? 0.98 : 1, {
-      duration: isSignOutButtonPressed ? 120 : 160,
-    });
-  }, [isSignOutButtonPressed, signOutButtonScale]);
+  const bubbleAnimatedStyle = useAnimatedStyle(() => {
+    const activeScale = status === 'off' ? 0.018 : 0.052;
 
-  const MemoAnimatedStyle = useAnimatedStyle(() => ({
-    shadowOpacity: 0.24 + MemoProgress.value * 0.22,
-    transform: [
-      { translateY: -4 * MemoProgress.value },
-      { scale: 1 + MemoProgress.value * 0.035 },
-    ],
+    return {
+      shadowOpacity: 0.18 + pulseProgress.value * 0.28,
+      transform: [
+        { translateY: -5 * pulseProgress.value },
+        { scale: 1 + pulseProgress.value * activeScale },
+      ],
+    };
+  });
+
+  const ringAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: 0.36 + pulseProgress.value * 0.38,
+    transform: [{ scale: 1 + pulseProgress.value * 0.12 }],
   }));
 
-  const statusDotAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: 0.56 + MemoProgress.value * 0.44,
-    transform: [{ scale: 0.85 + MemoProgress.value * 0.28 }],
-  }));
+  const handleStartMode = (nextMode: Exclude<MemoMode, null>) => {
+    setLatestReply(null);
+    setErrorMessage(null);
+    setMode(nextMode);
+  };
 
-  const signOutButtonAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: signOutButtonScale.value }],
-  }));
+  const handleSendMessage = async () => {
+    const trimmedMessage = message.trim();
+
+    if (!trimmedMessage || isSending) {
+      return;
+    }
+
+    setIsSending(true);
+    setErrorMessage(null);
+    setLatestReply(null);
+
+    try {
+      const response = await sendMemoChatMessage({
+        message: trimmedMessage,
+        userId: user?.id ?? null,
+        profileId: profile?.profile_id ?? null,
+        userEmail: profile?.email ?? user?.email ?? null,
+        sentAt: new Date().toISOString(),
+        source: 'memo-home',
+      });
+
+      setMessage('');
+      setComposerResetKey((currentKey) => currentKey + 1);
+      setLatestReply(getReplyFromWebhook(response) ?? 'Memo recibio tu mensaje.');
+    } catch (error) {
+      const nextErrorMessage =
+        error instanceof Error ? error.message : 'No se pudo enviar el mensaje a Memo.';
+      setErrorMessage(nextErrorMessage);
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   return (
     <GradientBackground>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <SafeAreaView style={styles.safeArea}>
-          <Animated.View entering={FadeInDown.duration(520).delay(80)} style={styles.header}>
-            <Image source={require('@/assets/MemoLogoName.png')} style={styles.logo} contentFit="contain" />
-            <View style={styles.statusPill}>
-              <Animated.View style={[styles.statusDot, statusDotAnimatedStyle]} />
-              <Text style={styles.statusText}>Sesion activa</Text>
-            </View>
-          </Animated.View>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.select({ ios: 'padding', default: undefined })}>
+        <ScrollView
+          style={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.content}>
+          <SafeAreaView style={styles.safeArea}>
+            <Animated.View entering={FadeInDown.duration(520).delay(80)} style={styles.header}>
+              <Image
+                source={require('@/assets/MemoLogoNameWhite.png')}
+                style={styles.logo}
+                contentFit="contain"
+              />
 
-          <Animated.View entering={FadeInDown.duration(620).delay(160)} style={styles.hero}>
-            <Animated.View style={[styles.MemoOrb, MemoAnimatedStyle]}>
-              <Image source={require('@/assets/MemoIcon1080px.png')} style={styles.MemoLogo} contentFit="contain" />
-            </Animated.View>
-
-            <Text style={styles.eyebrow}>{`Hola, ${displayName}`}</Text>
-            <Text style={styles.title}>Memo esta lista para tu proxima reunion.</Text>
-            <Text style={styles.subtitle}>
-              Auth y perfil ya estan conectados. El siguiente paso natural es capturar audio,
-              generar transcripcion y convertir compromisos en tareas personales.
-            </Text>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.duration(620).delay(260)} style={styles.profilePanel}>
-            <Text style={styles.panelTitle}>Perfil</Text>
-            <Animated.View entering={FadeIn.duration(360).delay(380)}>
-              <ProfileRow label="Nombre" value={profile?.name ?? 'Pendiente'} />
-            </Animated.View>
-            <Animated.View entering={FadeIn.duration(360).delay(440)}>
-              <ProfileRow label="Usuario" value={profile?.user_name ?? 'Pendiente'} />
-            </Animated.View>
-            <Animated.View entering={FadeIn.duration(360).delay(500)}>
-              <ProfileRow label="Email" value={profile?.email ?? user?.email ?? 'Pendiente'} />
+              <MemoActionButtons
+                onOpenProfile={() => router.push('/profile' as Href)}
+                onStartCall={() => handleStartMode('call')}
+                onStartListen={() => handleStartMode('listen')}
+              />
             </Animated.View>
 
-            <Animated.View
-              entering={FadeInDown.duration(420).delay(560)}
-              style={signOutButtonAnimatedStyle}>
-              <Pressable
-                onPress={signOut}
-                onPressIn={() => setIsSignOutButtonPressed(true)}
-                onPressOut={() => setIsSignOutButtonPressed(false)}
-                disabled={loading}
-                style={[styles.signOutButton, loading && styles.signOutButtonPressed]}>
-                <Text style={styles.signOutButtonText}>{loading ? 'Cerrando...' : 'Cerrar sesion'}</Text>
-              </Pressable>
+            <Animated.View entering={FadeInDown.duration(620).delay(160)} style={styles.centerStage}>
+              <MemoModeTrigger onSelectMode={handleStartMode} style={styles.trigger}>
+                <Animated.View style={[styles.memoRing, ringAnimatedStyle]} />
+                <Animated.View style={[styles.memoBubble, styles[status], bubbleAnimatedStyle]}>
+                  <Image
+                    source={require('@/assets/MemoIcon1080px.png')}
+                    style={styles.memoIcon}
+                    contentFit="contain"
+                  />
+                </Animated.View>
+              </MemoModeTrigger>
+
+              <View style={styles.statusBlock}>
+                <Text style={styles.statusText}>{STATUS_COPY[status]}</Text>
+                <Text style={styles.statusDescription}>{statusDescription}</Text>
+              </View>
             </Animated.View>
-          </Animated.View>
-        </SafeAreaView>
-      </ScrollView>
+
+            <Animated.View entering={FadeInDown.duration(620).delay(260)} style={styles.composerShell}>
+              <MemoChatComposer
+                loading={isSending}
+                resetKey={composerResetKey}
+                errorMessage={errorMessage}
+                latestReply={latestReply}
+                onChangeText={setMessage}
+                onSubmit={handleSendMessage}
+              />
+            </Animated.View>
+          </SafeAreaView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </GradientBackground>
   );
 }
 
-function ProfileRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.profileRow}>
-      <Text style={styles.profileLabel}>{label}</Text>
-      <Text style={styles.profileValue} numberOfLines={1}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   scroll: {
     flex: 1,
   },
   content: {
-    paddingBottom: BottomTabInset + Spacing.five,
+    flexGrow: 1,
+    paddingBottom: BottomTabInset + Spacing.four,
   },
   safeArea: {
     flex: 1,
-    padding: Spacing.four,
-    gap: Spacing.five,
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.three,
+    gap: Spacing.four,
   },
   header: {
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -147,102 +237,75 @@ const styles = StyleSheet.create({
     width: 132,
     height: 38,
   },
-  statusPill: {
-    flexDirection: 'row',
+  centerStage: {
+    flex: 1,
+    minHeight: 360,
     alignItems: 'center',
-    gap: Spacing.two,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    justifyContent: 'center',
+    gap: Spacing.four,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: MemoColors.secondaryBlue,
+  trigger: {
+    width: 236,
+    height: 236,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  memoRing: {
+    position: 'absolute',
+    width: 232,
+    height: 232,
+    borderRadius: 116,
+    borderWidth: 1,
+    borderColor: 'rgba(74,168,254,0.38)',
+    backgroundColor: 'rgba(35,133,255,0.06)',
+  },
+  memoBubble: {
+    width: 184,
+    height: 184,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 92,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+    shadowColor: MemoColors.secondaryBlue,
+    shadowOffset: { width: 0, height: 18 },
+    shadowRadius: 42,
+  },
+  memoIcon: {
+    width: 118,
+    height: 118,
+  },
+  off: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  listening: {
+    backgroundColor: 'rgba(35,133,255,0.20)',
+    borderColor: 'rgba(74,168,254,0.56)',
+  },
+  thinking: {
+    backgroundColor: 'rgba(80,115,255,0.22)',
+    borderColor: 'rgba(165,180,252,0.56)',
+  },
+  speaking: {
+    backgroundColor: 'rgba(14,165,233,0.22)',
+    borderColor: 'rgba(125,211,252,0.58)',
+  },
+  statusBlock: {
+    alignItems: 'center',
+    gap: 6,
   },
   statusText: {
     color: MemoColors.white,
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '800',
   },
-  hero: {
-    gap: Spacing.three,
-  },
-  MemoOrb: {
-    width: 144,
-    height: 144,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 72,
-    backgroundColor: 'rgba(35,133,255,0.13)',
-    borderWidth: 1,
-    borderColor: 'rgba(74,168,254,0.42)',
-  },
-  MemoLogo: {
-    width: 92,
-    height: 92,
-  },
-  eyebrow: {
-    color: MemoColors.secondaryBlue,
+  statusDescription: {
+    color: 'rgba(255,255,255,0.66)',
     fontSize: 14,
-    fontWeight: '800',
-  },
-  title: {
-    color: MemoColors.white,
-    fontSize: 34,
-    fontWeight: '800',
-    lineHeight: 40,
-  },
-  subtitle: {
-    color: 'rgba(255,255,255,0.70)',
-    fontSize: 16,
-    lineHeight: 23,
-  },
-  profilePanel: {
-    gap: Spacing.three,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 24,
-    backgroundColor: 'rgba(4,10,26,0.72)',
-    padding: Spacing.four,
-  },
-  panelTitle: {
-    color: MemoColors.white,
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  profileRow: {
-    gap: 4,
-  },
-  profileLabel: {
-    color: 'rgba(255,255,255,0.52)',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  profileValue: {
-    color: MemoColors.white,
-    fontSize: 16,
     fontWeight: '600',
+    textAlign: 'center',
   },
-  signOutButton: {
-    width: '100%',
-    height: 48,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.24)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  signOutButtonPressed: {
-    opacity: 0.72,
-  },
-  signOutButtonText: {
-    color: MemoColors.white,
-    fontSize: 15,
-    fontWeight: '800',
+  composerShell: {
+    paddingBottom: Spacing.two,
   },
 });
