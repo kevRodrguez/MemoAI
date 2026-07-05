@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -7,15 +7,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionButton, ActionRow } from '@/components/action-button';
 import { BackButton } from '@/components/back-button';
 import { DateTimeField } from '@/components/date-time-field';
-import { DetailItem } from '@/components/detail-item';
 import { FormInput } from '@/components/form-input';
 import { GradientBackground } from '@/components/gradient-background';
 import { EmptyState, ErrorBanner, LoadingPanel } from '@/components/list-states';
+import { MemoMeetingSummaryContent } from '@/components/memo-meeting-summary';
 import { SharedStyles } from '@/constants/shared-styles';
 import { Spacing } from '@/constants/theme';
-import { deleteMeeting, fetchMeetingById, updateMeeting } from '@/lib/memo-records';
-import { formatMeetingDate, isPastMeeting } from '@/lib/meeting-helpers';
-import { MemoMeeting } from '@/lib/supabase';
+import { deleteMeeting, fetchMeetingById, fetchTasksByMeetingId, updateMeeting } from '@/lib/memo-records';
+import { canShowMeetingContent, formatMeetingDate, isPastMeeting } from '@/lib/meeting-helpers';
+import { mapMemoTaskToSummaryTask } from '@/lib/meeting-summary';
+import { getRecordingPublicUrl } from '@/lib/recording-url';
+import { MemoMeeting, MemoTask } from '@/lib/supabase';
 
 type MeetingDraft = {
   title: string;
@@ -42,6 +44,7 @@ function getErrorMessage(error: unknown) {
 export default function MeetingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [meeting, setMeeting] = useState<MemoMeeting | null>(null);
+  const [tasks, setTasks] = useState<MemoTask[]>([]);
   const [loading, setLoading] = useState(() => Boolean(id));
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -55,10 +58,11 @@ export default function MeetingDetailScreen() {
 
     let isMounted = true;
 
-    fetchMeetingById(id)
-      .then((nextMeeting) => {
+    Promise.all([fetchMeetingById(id), fetchTasksByMeetingId(id)])
+      .then(([nextMeeting, nextTasks]) => {
         if (isMounted) {
           setMeeting(nextMeeting);
+          setTasks(nextTasks);
         }
       })
       .catch((error: unknown) => {
@@ -95,7 +99,7 @@ export default function MeetingDetailScreen() {
       return;
     }
 
-    const canEditContent = isPastMeeting(meeting);
+    const canEditContent = canShowMeetingContent(meeting);
     setSaving(true);
     setErrorMessage(null);
 
@@ -147,7 +151,9 @@ export default function MeetingDetailScreen() {
     ]);
   }, [meeting]);
 
-  const canShowContent = meeting ? isPastMeeting(meeting) : false;
+  const summaryTasks = useMemo(() => tasks.map(mapMemoTaskToSummaryTask), [tasks]);
+  const audioUrl = useMemo(() => getRecordingPublicUrl(meeting?.audio_path), [meeting?.audio_path]);
+  const canShowContent = meeting ? canShowMeetingContent(meeting) : false;
 
   return (
     <GradientBackground>
@@ -200,7 +206,9 @@ export default function MeetingDetailScreen() {
                       label="Transcripcion"
                       value={draft.transcription}
                       multiline
-                      onChangeText={(transcription) => setDraft((current) => current && { ...current, transcription })}
+                      onChangeText={(transcription) =>
+                        setDraft((current) => current && { ...current, transcription })
+                      }
                     />
                   </>
                 ) : null}
@@ -210,6 +218,34 @@ export default function MeetingDetailScreen() {
                 </ActionRow>
               </View>
             </Animated.View>
+          ) : canShowContent ? (
+            <Animated.View entering={FadeInDown.duration(420)} style={styles.summaryShell}>
+              <MemoMeetingSummaryContent
+                scrollable={false}
+                eyebrow={isPastMeeting(meeting) ? 'Reunion pasada' : 'Reunion procesada'}
+                title={meeting.title ?? 'Meeting sin titulo'}
+                aiSummary={meeting.ai_summary ?? ''}
+                transcription={meeting.transcription ?? ''}
+                tasks={summaryTasks}
+                tasksLabel={
+                  summaryTasks.length === 1
+                    ? '1 tarea vinculada'
+                    : `${summaryTasks.length} tareas vinculadas`
+                }
+                audioUrl={audioUrl}
+                footer={
+                  <ActionRow>
+                    <ActionButton label="Editar" variant="secondary" onPress={startEditing} disabled={saving} />
+                    <ActionButton
+                      label={saving ? 'Eliminando...' : 'Eliminar'}
+                      variant="danger"
+                      onPress={confirmDelete}
+                      disabled={saving}
+                    />
+                  </ActionRow>
+                }
+              />
+            </Animated.View>
           ) : (
             <Animated.View entering={FadeInDown.duration(420)} style={SharedStyles.card}>
               <View style={SharedStyles.cardHeader}>
@@ -217,27 +253,14 @@ export default function MeetingDetailScreen() {
                   <Text style={[SharedStyles.cardTitle, SharedStyles.detailCardTitle]}>
                     {meeting.title ?? 'Meeting sin titulo'}
                   </Text>
-                  <Text style={SharedStyles.cardMeta}>{canShowContent ? 'Pasada' : 'Agendada'}</Text>
+                  <Text style={SharedStyles.cardMeta}>Agendada</Text>
                 </View>
               </View>
 
-              <View style={SharedStyles.detailGrid}>
-                <DetailItem label="Fecha" value={formatMeetingDate(meeting.date_time)} />
-                <DetailItem label="Duracion" value={meeting.duration ? `${meeting.duration} min` : 'Pendiente'} />
-              </View>
-
-              {canShowContent ? (
-                <>
-                  <MeetingSection title="Resumen" text={meeting.ai_summary || 'Sin resumen generado todavia.'} />
-                  {meeting.transcription ? (
-                    <MeetingSection title="Transcripcion" text={meeting.transcription} />
-                  ) : null}
-                </>
-              ) : (
-                <Text style={SharedStyles.cardDescription}>
-                  Reunion agendada. El resumen y la transcripcion se mostraran cuando la reunion haya pasado.
-                </Text>
-              )}
+              <Text style={SharedStyles.cardDescription}>
+                Reunion agendada para {formatMeetingDate(meeting.date_time)}. El resumen, la transcripcion y el audio se
+                mostraran cuando la reunion haya sido procesada.
+              </Text>
 
               <ActionRow>
                 <ActionButton label="Editar" variant="secondary" onPress={startEditing} disabled={saving} />
@@ -251,15 +274,6 @@ export default function MeetingDetailScreen() {
   );
 }
 
-function MeetingSection({ title, text }: { title: string; text: string }) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={SharedStyles.cardDescription}>{text}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   twoColumn: {
     flexDirection: 'row',
@@ -268,12 +282,7 @@ const styles = StyleSheet.create({
   flexColumn: {
     flex: 1,
   },
-  section: {
-    gap: Spacing.one,
-  },
-  sectionTitle: {
-    color: 'rgba(255,255,255,0.52)',
-    fontSize: 12,
-    fontWeight: '800',
+  summaryShell: {
+    gap: Spacing.three,
   },
 });

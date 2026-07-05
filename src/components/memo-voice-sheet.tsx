@@ -4,8 +4,8 @@ import { useConversation, type ConversationStatus } from '@elevenlabs/react-nati
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { lazy, Suspense, Component, type ErrorInfo, type ReactNode, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -22,6 +22,60 @@ import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/providers/auth-provider';
 import { ensureMicrophonePermission, getAgentId } from '@/services/elevenlabs';
 import type { MemoMode } from '@/types/memo';
+
+const MemoListenSheet = lazy(() =>
+  import('@/components/memo-listen-sheet').then((module) => ({
+    default: module.MemoListenSheet,
+  }))
+);
+
+type ListenSheetErrorBoundaryProps = {
+  insets: EdgeInsets;
+  children: ReactNode;
+};
+
+type ListenSheetErrorBoundaryState = {
+  errorMessage: string | null;
+};
+
+class ListenSheetErrorBoundary extends Component<
+  ListenSheetErrorBoundaryProps,
+  ListenSheetErrorBoundaryState
+> {
+  state: ListenSheetErrorBoundaryState = { errorMessage: null };
+
+  static getDerivedStateFromError(error: Error) {
+    const isNativeModuleError =
+      error.message.includes('ExpoAudio') || error.message.includes('native module');
+
+    return {
+      errorMessage: isNativeModuleError
+        ? 'El modulo de audio nativo no esta disponible. Reconstruye el dev client con: npx expo run:ios'
+        : error.message,
+    };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[memo-listen] failed to load', error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.errorMessage) {
+      return (
+        <View
+          style={[
+            styles.content,
+            { paddingBottom: Math.max(this.props.insets.bottom, Spacing.four) },
+          ]}>
+          <Text style={styles.title}>Modo escucha no disponible</Text>
+          <Text style={styles.description}>{this.state.errorMessage}</Text>
+        </View>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const SHEET_BASE_COLOR = '#020617';
 
@@ -65,7 +119,17 @@ export function MemoVoiceSheet({ mode, onDismiss }: MemoVoiceSheetProps) {
           {mode === 'call' ? (
             <CallSheetBody insets={insets} onDismiss={onDismiss} />
           ) : (
-            <ListenSheetBody insets={insets} />
+            <ListenSheetErrorBoundary insets={insets}>
+              <Suspense
+                fallback={
+                  <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, Spacing.four) }]}>
+                    <ActivityIndicator color={MemoColors.white} size="large" />
+                    <Text style={styles.loadingText}>Preparando modo escucha...</Text>
+                  </View>
+                }>
+                <MemoListenSheet insets={insets} onDismiss={onDismiss} />
+              </Suspense>
+            </ListenSheetErrorBoundary>
           )}
         </View>
       </RNHostView>
@@ -128,6 +192,7 @@ function CallSheetBody({ insets, onDismiss }: CallSheetBodyProps) {
           dynamicVariables: {
             profile_id: profile?.profile_id ?? '',
             name: profile?.name ?? '',
+            current_time: new Date().toISOString(),
           },
         });
       } catch (error) {
@@ -268,39 +333,6 @@ function CallSheetBody({ insets, onDismiss }: CallSheetBodyProps) {
   );
 }
 
-type ListenSheetBodyProps = {
-  insets: EdgeInsets;
-};
-
-function ListenSheetBody({ insets }: ListenSheetBodyProps) {
-  return (
-    <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, Spacing.four) }]}>
-      <View style={styles.memoStage}>
-        <View style={styles.memoHalo}>
-          <Image
-            source={require('@/assets/MemoIcon1080px.png')}
-            style={styles.memoIcon}
-            contentFit="contain"
-          />
-        </View>
-      </View>
-
-      <View style={styles.copyBlock}>
-        <Text style={styles.eyebrow}>Reunion en vivo</Text>
-        <Text style={styles.title}>Modo escucha</Text>
-      </View>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Iniciar grabacion"
-        onPress={() => {}}
-        style={({ pressed }) => [styles.recordButton, pressed && styles.recordButtonPressed]}>
-        <Text style={styles.recordButtonText}>Iniciar grabacion</Text>
-      </Pressable>
-    </View>
-  );
-}
-
 const statusColors: Record<ConversationStatus, string> = {
   disconnected: 'rgba(255,255,255,0.16)',
   connecting: 'rgba(165,180,252,0.56)',
@@ -321,6 +353,12 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.five,
     paddingHorizontal: Spacing.four,
     gap: Spacing.five,
+  },
+  loadingText: {
+    color: 'rgba(255,255,255,0.66)',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   callStage: {
     flex: 1,
@@ -348,30 +386,6 @@ const styles = StyleSheet.create({
   callIcon: {
     width: 118,
     height: 118,
-  },
-  memoStage: {
-    flex: 1,
-    minHeight: 280,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  memoHalo: {
-    width: 220,
-    height: 220,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 110,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.16)',
-    backgroundColor: 'rgba(35,133,255,0.18)',
-    shadowColor: MemoColors.secondaryBlue,
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.42,
-    shadowRadius: 48,
-  },
-  memoIcon: {
-    width: 142,
-    height: 142,
   },
   copyBlock: {
     alignItems: 'center',
@@ -421,22 +435,5 @@ const styles = StyleSheet.create({
   hangUpButton: {
     borderColor: 'rgba(248,113,113,0.4)',
     backgroundColor: '#E11D48',
-  },
-  recordButton: {
-    minHeight: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 28,
-    backgroundColor: MemoColors.white,
-    paddingHorizontal: Spacing.four,
-  },
-  recordButtonPressed: {
-    opacity: 0.82,
-    transform: [{ scale: 0.99 }],
-  },
-  recordButtonText: {
-    color: '#03122A',
-    fontSize: 17,
-    fontWeight: '800',
   },
 });

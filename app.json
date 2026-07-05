@@ -10,7 +10,7 @@
     "ios": {
       "bundleIdentifier": "com.kevrodrguez.Memo",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Memo usa el microfono para conversar contigo por voz durante las llamadas."
+        "NSMicrophoneUsageDescription": "Memo usa el microfono para conversar contigo por voz y grabar reuniones en modo escucha."
       }
     },
     "android": {
@@ -43,7 +43,13 @@
         }
       ],
       "@livekit/react-native-expo-plugin",
-      "@config-plugins/react-native-webrtc"
+      "@config-plugins/react-native-webrtc",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Memo usa el microfono para grabar la reunion en modo escucha."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

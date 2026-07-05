@@ -4,7 +4,7 @@ import type {
   MemoTranscriptWebhookRequest,
 } from '@/types/memo';
 
-const CHAT_WEBHOOK_URL = process.env.EXPO_PUBLIC_N8N_CHAT_WEBHOOK_URL;
+const CHAT_WEBHOOK_URL = process.env.EXPO_PUBLIC_N8N_CHAT;
 const TRANSCRIPT_WEBHOOK_URL = process.env.EXPO_PUBLIC_N8N_TRANSCRIPT_WEBHOOK_URL;
 
 export class MemoWebhookConfigurationError extends Error {
@@ -14,6 +14,10 @@ export class MemoWebhookConfigurationError extends Error {
   }
 }
 
+function isWebhookFailure(success: MemoChatWebhookResponse['success']) {
+  return success === false || success === 'false';
+}
+
 async function parseWebhookResponse(response: Response): Promise<MemoChatWebhookResponse> {
   const contentType = response.headers.get('content-type') ?? '';
 
@@ -21,7 +25,17 @@ async function parseWebhookResponse(response: Response): Promise<MemoChatWebhook
     const raw = await response.json();
 
     if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
-      return { ...(raw as MemoChatWebhookResponse), raw };
+      const parsed = { ...(raw as MemoChatWebhookResponse), raw };
+
+      if (isWebhookFailure(parsed.success)) {
+        throw new Error(
+          typeof parsed.message === 'string' && parsed.message.trim()
+            ? parsed.message
+            : 'No se pudo obtener una respuesta de Memo.'
+        );
+      }
+
+      return parsed;
     }
 
     return { raw };
@@ -37,12 +51,16 @@ function assertOkResponse(response: Response, action: string) {
   }
 }
 
+export function getReplyFromWebhook(response: MemoChatWebhookResponse) {
+  return response.response ?? response.reply ?? response.message ?? response.text ?? null;
+}
+
 export async function sendMemoChatMessage(
   input: MemoChatWebhookRequest
 ): Promise<MemoChatWebhookResponse> {
   if (!CHAT_WEBHOOK_URL) {
     throw new MemoWebhookConfigurationError(
-      'Configura EXPO_PUBLIC_N8N_CHAT_WEBHOOK_URL para enviar mensajes a Memo.'
+      'Configura EXPO_PUBLIC_N8N_CHAT para enviar mensajes a Memo.'
     );
   }
 
