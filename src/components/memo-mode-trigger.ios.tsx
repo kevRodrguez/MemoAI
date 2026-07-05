@@ -68,10 +68,16 @@ export function MemoModeTrigger({ children, onSelectMode, style }: MemoModeTrigg
 const styles = StyleSheet.create({
   dialogHost: {
     position: 'absolute',
-    top: '50%',
-    left: '50%',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0,
+  },
+  dialogAnchor: {
     width: 1,
     height: 1,
-    opacity: 0,
   },
 });
