@@ -1,11 +1,20 @@
 import { Image } from 'expo-image';
 import { type Href, router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
   FadeInDown,
+  FadeOut,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -19,11 +28,12 @@ import { GradientBackground } from '@/components/gradient-background';
 import { MemoActionButtons } from '@/components/memo-action-buttons';
 import { MemoChatComposer } from '@/components/memo-chat-composer';
 import { MemoModeTrigger } from '@/components/memo-mode-trigger';
+import { MemoVoiceSheet } from '@/components/memo-voice-sheet';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTabBar } from '@/context/tab-bar-context';
+import { useAuth } from '@/providers/auth-provider';
 import { sendMemoChatMessage } from '@/services/memo-webhooks';
 import type { MemoChatWebhookResponse, MemoMode, MemoStatus } from '@/types/memo';
-import { useAuth } from '@/providers/auth-provider';
 
 const STATUS_COPY: Record<MemoStatus, string> = {
   off: '¡Hablemos!',
@@ -32,17 +42,13 @@ const STATUS_COPY: Record<MemoStatus, string> = {
   speaking: 'Hablando',
 };
 
-function getMemoStatus(mode: MemoMode, isSending: boolean, latestReply: string | null): MemoStatus {
+function getMemoStatus(isSending: boolean, latestReply: string | null): MemoStatus {
   if (isSending) {
     return 'thinking';
   }
 
   if (latestReply) {
     return 'speaking';
-  }
-
-  if (mode === 'call' || mode === 'listen') {
-    return 'listening';
   }
 
   return 'off';
@@ -56,15 +62,16 @@ export default function ProtectedHomeScreen() {
   const { profile, user } = useAuth();
   const { isTabBarHidden, setIsTabBarHidden } = useTabBar();
   const insets = useSafeAreaInsets();
-  const [mode, setMode] = useState<MemoMode>(null);
+  const [voiceSheetMode, setVoiceSheetMode] = useState<MemoMode>(null);
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [composerResetKey, setComposerResetKey] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [latestReply, setLatestReply] = useState<string | null>(null);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   const pulseProgress = useSharedValue(0);
-  const status = getMemoStatus(mode, isSending, latestReply);
+  const status = getMemoStatus(isSending, latestReply);
 
   useFocusEffect(
     useCallback(() => {
@@ -73,14 +80,22 @@ export default function ProtectedHomeScreen() {
     }, [setIsTabBarHidden])
   );
 
-  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+    const hideSubscription = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const revealTabBarGesture = useMemo(
     () =>
       Gesture.Pan()
-        .simultaneousWithExternalGesture(
-          scrollRef as unknown as React.RefObject<React.ComponentType>
-        )
         .activeOffsetY([-14, 14])
         .failOffsetX([-28, 28])
         .onEnd((event) => {
@@ -96,14 +111,6 @@ export default function ProtectedHomeScreen() {
   const displayName = profile?.name || profile?.user_name || user?.email || 'Memo user';
 
   const statusDescription = useMemo(() => {
-    if (status === 'listening' && mode === 'call') {
-      return 'Modo llamada preparado';
-    }
-
-    if (status === 'listening' && mode === 'listen') {
-      return 'Modo escucha preparado';
-    }
-
     if (status === 'thinking') {
       return 'Enviando contexto a n8n';
     }
@@ -113,7 +120,7 @@ export default function ProtectedHomeScreen() {
     }
 
     return `Hola, ${displayName}`;
-  }, [displayName, mode, status]);
+  }, [displayName, status]);
 
   useEffect(() => {
     pulseProgress.value = withRepeat(
@@ -160,10 +167,8 @@ export default function ProtectedHomeScreen() {
       (composerVisibleBottom - composerHiddenBottom) * tabBarProgress.value,
   }));
 
-  const handleStartMode = (nextMode: Exclude<MemoMode, null>) => {
-    setLatestReply(null);
-    setErrorMessage(null);
-    setMode(nextMode);
+  const handleOpenVoiceSheet = (nextMode: Exclude<MemoMode, null>) => {
+    setVoiceSheetMode(nextMode);
   };
 
   const handleSendMessage = async () => {
@@ -206,7 +211,6 @@ export default function ProtectedHomeScreen() {
           style={styles.keyboardAvoidingView}
           behavior={Platform.select({ ios: 'padding', default: undefined })}>
           <ScrollView
-            ref={scrollRef}
             style={styles.scroll}
             keyboardShouldPersistTaps="handled"
             alwaysBounceVertical
@@ -227,32 +231,40 @@ export default function ProtectedHomeScreen() {
 
               <MemoActionButtons
                 onOpenProfile={() => router.push('/profile' as Href)}
-                onStartCall={() => handleStartMode('call')}
-                onStartListen={() => handleStartMode('listen')}
+                onStartCall={() => handleOpenVoiceSheet('call')}
+                onStartListen={() => handleOpenVoiceSheet('listen')}
               />
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.duration(620).delay(160)} style={styles.centerStage}>
-              <MemoModeTrigger onSelectMode={handleStartMode} style={styles.trigger}>
+            {!isKeyboardVisible ? (
+              <Animated.View
+                entering={FadeInDown.duration(620).delay(160)}
+                exiting={FadeOut.duration(180)}
+                style={styles.centerStage}>
+                <MemoModeTrigger onSelectMode={handleOpenVoiceSheet} style={styles.trigger}>
+                  <Animated.View style={[styles.memoBubble, styles[status], bubbleAnimatedStyle]}>
+                    <Image
+                      source={require('@/assets/MemoIcon1080px.png')}
+                      style={styles.memoIcon}
+                      contentFit="contain"
+                    />
+                  </Animated.View>
+                </MemoModeTrigger>
 
-                <Animated.View style={[styles.memoBubble, styles[status], bubbleAnimatedStyle]}>
-                  <Image
-                    source={require('@/assets/MemoIcon1080px.png')}
-                    style={styles.memoIcon}
-                    contentFit="contain"
-                  />
-                </Animated.View>
-              </MemoModeTrigger>
-
-              <View style={styles.statusBlock}>
-                <Text style={styles.statusText}>{STATUS_COPY[status]}</Text>
-                <Text style={styles.statusDescription}>{statusDescription}</Text>
-              </View>
-            </Animated.View>
+                <View style={styles.statusBlock}>
+                  <Text style={styles.statusText}>{STATUS_COPY[status]}</Text>
+                  <Text style={styles.statusDescription}>{statusDescription}</Text>
+                </View>
+              </Animated.View>
+            ) : null}
 
             <Animated.View
               entering={FadeInDown.duration(620).delay(260)}
-              style={[styles.composerShell, composerAnimatedStyle]}>
+              style={[
+                styles.composerShell,
+                isKeyboardVisible && styles.composerShellExpanded,
+                isKeyboardVisible ? styles.composerShellKeyboardOpen : composerAnimatedStyle,
+              ]}>
               <MemoChatComposer
                 loading={isSending}
                 resetKey={composerResetKey}
@@ -266,6 +278,7 @@ export default function ProtectedHomeScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </GestureDetector>
+      <MemoVoiceSheet mode={voiceSheetMode} onDismiss={() => setVoiceSheetMode(null)} />
     </GradientBackground>
   );
 }
@@ -310,15 +323,6 @@ const styles = StyleSheet.create({
     height: 236,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  memoRing: {
-    position: 'absolute',
-    width: 232,
-    height: 232,
-    borderRadius: 116,
-    borderWidth: 1,
-    borderColor: 'rgba(74,168,254,0.38)',
-    backgroundColor: 'rgba(35,133,255,0.06)',
   },
   memoBubble: {
     width: 184,
@@ -367,4 +371,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   composerShell: {},
+  composerShellExpanded: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  composerShellKeyboardOpen: {
+    paddingBottom: 0,
+  },
 });

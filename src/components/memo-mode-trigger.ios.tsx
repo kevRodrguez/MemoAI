@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 
 import { Button, ConfirmationDialog, Host, Text } from '@expo/ui/swift-ui';
@@ -13,11 +13,6 @@ type MemoModeTriggerProps = {
 
 export function MemoModeTrigger({ children, onSelectMode, style }: MemoModeTriggerProps) {
   const [isPresented, setIsPresented] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsPresented(true), 1200);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleSelectMode = (mode: Exclude<MemoMode, null>) => {
     setIsPresented(false);
@@ -75,9 +70,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 0,
-  },
-  dialogAnchor: {
-    width: 1,
-    height: 1,
   },
 });
