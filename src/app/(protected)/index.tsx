@@ -208,61 +208,63 @@ export default function ProtectedHomeScreen() {
     <GradientBackground>
       <GestureDetector gesture={revealTabBarGesture}>
         <KeyboardAvoidingView
-          style={styles.keyboardAvoidingView}
+          style={styles.screen}
           behavior={Platform.select({ ios: 'padding', default: undefined })}>
-          <ScrollView
-            style={styles.scroll}
-            keyboardShouldPersistTaps="handled"
-            alwaysBounceVertical
-            contentContainerStyle={styles.content}>
-          <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
-            <Animated.View entering={FadeInDown.duration(520).delay(80)} style={styles.header}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Mostrar u ocultar la barra de navegacion"
-                hitSlop={12}
-                onPress={() => setIsTabBarHidden((hidden) => !hidden)}>
-                <Image
-                  source={require('@/assets/MemoLogoNameWhite.png')}
-                  style={styles.logo}
-                  contentFit="contain"
-                />
-              </Pressable>
-
-              <MemoActionButtons
-                onOpenProfile={() => router.push('/profile' as Href)}
-                onStartCall={() => handleOpenVoiceSheet('call')}
-                onStartListen={() => handleOpenVoiceSheet('listen')}
-              />
-            </Animated.View>
-
-            {!isKeyboardVisible ? (
-              <Animated.View
-                entering={FadeInDown.duration(620).delay(160)}
-                exiting={FadeOut.duration(180)}
-                style={styles.centerStage}>
-                <MemoModeTrigger onSelectMode={handleOpenVoiceSheet} style={styles.trigger}>
-                  <Animated.View style={[styles.memoBubble, styles[status], bubbleAnimatedStyle]}>
+          <View style={styles.screenBody}>
+            <ScrollView
+              style={styles.scroll}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              contentContainerStyle={styles.scrollContent}>
+              <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+                <Animated.View entering={FadeInDown.duration(520).delay(80)} style={styles.header}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Mostrar u ocultar la barra de navegacion"
+                    hitSlop={12}
+                    onPress={() => setIsTabBarHidden((hidden) => !hidden)}>
                     <Image
-                      source={require('@/assets/MemoIcon1080px.png')}
-                      style={styles.memoIcon}
+                      source={require('@/assets/MemoLogoNameWhite.png')}
+                      style={styles.logo}
                       contentFit="contain"
                     />
-                  </Animated.View>
-                </MemoModeTrigger>
+                  </Pressable>
 
-                <View style={styles.statusBlock}>
-                  <Text style={styles.statusText}>{STATUS_COPY[status]}</Text>
-                  <Text style={styles.statusDescription}>{statusDescription}</Text>
-                </View>
-              </Animated.View>
-            ) : null}
+                  <MemoActionButtons
+                    onOpenProfile={() => router.push('/profile' as Href)}
+                    onStartCall={() => handleOpenVoiceSheet('call')}
+                    onStartListen={() => handleOpenVoiceSheet('listen')}
+                  />
+                </Animated.View>
+
+                {!isKeyboardVisible ? (
+                  <Animated.View
+                    entering={FadeInDown.duration(620).delay(160)}
+                    exiting={FadeOut.duration(180)}
+                    style={styles.centerStage}>
+                    <MemoModeTrigger onSelectMode={handleOpenVoiceSheet} style={styles.trigger}>
+                      <Animated.View style={[styles.memoBubble, styles[status], bubbleAnimatedStyle]}>
+                        <Image
+                          source={require('@/assets/MemoIcon1080px.png')}
+                          style={styles.memoIcon}
+                          contentFit="contain"
+                        />
+                      </Animated.View>
+                    </MemoModeTrigger>
+
+                    <View style={styles.statusBlock}>
+                      <Text style={styles.statusText}>{STATUS_COPY[status]}</Text>
+                      <Text style={styles.statusDescription}>{statusDescription}</Text>
+                    </View>
+                  </Animated.View>
+                ) : null}
+              </SafeAreaView>
+            </ScrollView>
 
             <Animated.View
               entering={FadeInDown.duration(620).delay(260)}
               style={[
                 styles.composerShell,
-                isKeyboardVisible && styles.composerShellExpanded,
                 isKeyboardVisible ? styles.composerShellKeyboardOpen : composerAnimatedStyle,
               ]}>
               <MemoChatComposer
@@ -274,8 +276,7 @@ export default function ProtectedHomeScreen() {
                 onSubmit={handleSendMessage}
               />
             </Animated.View>
-          </SafeAreaView>
-          </ScrollView>
+          </View>
         </KeyboardAvoidingView>
       </GestureDetector>
       <MemoVoiceSheet mode={voiceSheetMode} onDismiss={() => setVoiceSheetMode(null)} />
@@ -284,18 +285,20 @@ export default function ProtectedHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  keyboardAvoidingView: {
+  screen: {
+    flex: 1,
+  },
+  screenBody: {
     flex: 1,
   },
   scroll: {
     flex: 1,
   },
-  content: {
+  scrollContent: {
     flexGrow: 1,
   },
   safeArea: {
     flex: 1,
-    justifyContent: 'space-between',
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.three,
     gap: Spacing.four,
@@ -370,10 +373,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  composerShell: {},
-  composerShellExpanded: {
-    flex: 1,
-    justifyContent: 'flex-end',
+  composerShell: {
+    paddingHorizontal: Spacing.four,
   },
   composerShellKeyboardOpen: {
     paddingBottom: 0,

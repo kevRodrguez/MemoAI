@@ -1,3 +1,4 @@
+import { ConversationProvider } from '@elevenlabs/react-native';
 import { DarkTheme, DefaultTheme, Slot, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'react-native';
@@ -12,12 +13,14 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <AuthProvider>
-          <AnimatedSplashOverlay />
-          <Slot />
-        </AuthProvider>
-      </ThemeProvider>
+      <ConversationProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <AuthProvider>
+            <AnimatedSplashOverlay />
+            <Slot />
+          </AuthProvider>
+        </ThemeProvider>
+      </ConversationProvider>
     </GestureHandlerRootView>
   );
 }
