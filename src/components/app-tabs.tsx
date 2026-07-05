@@ -20,7 +20,7 @@ export default function AppTabs() {
           <NativeTabs.Trigger.Icon sf={{ default: 'calendar', selected: 'calendar' }} md="event" />
         </NativeTabs.Trigger>
 
-        <NativeTabs.Trigger name="index">
+        <NativeTabs.Trigger name="(index)">
           <NativeTabs.Trigger.Label>Chat</NativeTabs.Trigger.Label>
           <NativeTabs.Trigger.Icon
             sf={{

@@ -27,7 +27,7 @@ export default function AppTabs() {
             <TabTrigger name="meetings" href="/meetings" asChild>
               <TabButton>Meetings</TabButton>
             </TabTrigger>
-            <TabTrigger name="index" href="/" asChild>
+            <TabTrigger name="(index)" href="/" asChild>
               <TabButton>Chat</TabButton>
             </TabTrigger>
             <TabTrigger name="tasks" href="/tasks" asChild>

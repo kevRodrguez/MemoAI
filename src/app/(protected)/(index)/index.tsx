@@ -233,38 +233,41 @@ export default function ProtectedHomeScreen() {
     }
   };
 
+  const handleOpenProfile = useCallback(() => {
+    router.push('/profile' as Href);
+  }, []);
+
   return (
     <GradientBackground>
-      <GestureDetector gesture={revealTabBarGesture}>
-        <KeyboardAvoidingView
-          style={styles.screen}
-          behavior={Platform.select({ ios: 'padding', default: undefined })}>
-          <View style={styles.screenBody}>
-            <ScrollView
-              style={styles.scroll}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="interactive"
-              contentContainerStyle={styles.scrollContent}>
-              <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
-                <Animated.View entering={FadeInDown.duration(520).delay(80)} style={styles.header}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Mostrar u ocultar la barra de navegacion"
-                    hitSlop={12}
-                    onPress={() => setIsTabBarHidden((hidden) => !hidden)}>
-                    <Image
-                      source={require('@/assets/MemoLogoNameWhite.png')}
-                      style={styles.logo}
-                      contentFit="contain"
-                    />
-                  </Pressable>
-
-                  <MemoActionButtons
-                    onOpenProfile={() => router.push('/profile' as Href)}
-                    onStartCall={() => handleOpenVoiceSheet('call')}
-                    onStartListen={() => handleOpenVoiceSheet('listen')}
+      <KeyboardAvoidingView
+        style={styles.screen}
+        behavior={Platform.select({ ios: 'padding', default: undefined })}>
+        <View style={styles.screenBody}>
+          <ScrollView
+            style={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            contentContainerStyle={styles.scrollContent}>
+            <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+              <Animated.View entering={FadeInDown.duration(520).delay(80)} style={styles.header}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Mostrar u ocultar la barra de navegacion"
+                  hitSlop={12}
+                  onPress={() => setIsTabBarHidden((hidden) => !hidden)}>
+                  <Image
+                    source={require('@/assets/MemoLogoNameWhite.png')}
+                    style={styles.logo}
+                    contentFit="contain"
                   />
-                </Animated.View>
+                </Pressable>
+
+                <MemoActionButtons
+                  onOpenProfile={handleOpenProfile}
+                  onStartCall={() => handleOpenVoiceSheet('call')}
+                  onStartListen={() => handleOpenVoiceSheet('listen')}
+                />
+              </Animated.View>
 
                 {!isKeyboardVisible ? (
                   <Animated.View
@@ -287,9 +290,10 @@ export default function ProtectedHomeScreen() {
                       <Text style={styles.statusText}>{STATUS_COPY[status]}</Text>
                   </Animated.View>
                 ) : null}
-              </SafeAreaView>
-            </ScrollView>
+            </SafeAreaView>
+          </ScrollView>
 
+          <GestureDetector gesture={revealTabBarGesture}>
             <Animated.View
               entering={FadeInDown.duration(620).delay(260)}
               style={[
@@ -336,9 +340,9 @@ export default function ProtectedHomeScreen() {
                 onSubmit={handleSendMessage}
               />
             </Animated.View>
-          </View>
-        </KeyboardAvoidingView>
-      </GestureDetector>
+          </GestureDetector>
+        </View>
+      </KeyboardAvoidingView>
       <MemoVoiceSheet mode={voiceSheetMode} onDismiss={() => setVoiceSheetMode(null)} />
     </GradientBackground>
   );
