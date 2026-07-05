@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback } from 'react';
 import {
   ActivityIndicator,
@@ -88,6 +88,17 @@ export default function ProfileScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInDown.duration(520).delay(280)}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Conecta tu IA"
+              onPress={() => router.push('/connect-ai' as Href)}
+              style={({ pressed }) => [styles.connectAiButton, pressed && styles.pressed]}>
+              <Text style={styles.connectAiButtonText}>Conecta tu IA</Text>
+              <Text style={styles.connectAiButtonHint}>Configura Cursor vía MCP</Text>
+            </Pressable>
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.duration(520).delay(320)}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Cerrar sesion"
@@ -240,6 +251,25 @@ const styles = StyleSheet.create({
   profileValue: {
     color: MemoColors.white,
     fontSize: 16,
+    fontWeight: '600',
+  },
+  connectAiButton: {
+    borderWidth: 1,
+    borderColor: 'rgba(74,168,254,0.35)',
+    borderRadius: 16,
+    backgroundColor: 'rgba(35,133,255,0.12)',
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.three,
+    gap: 2,
+  },
+  connectAiButtonText: {
+    color: MemoColors.white,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  connectAiButtonHint: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
     fontWeight: '600',
   },
   signOutButton: {
