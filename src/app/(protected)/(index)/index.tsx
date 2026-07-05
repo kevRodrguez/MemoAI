@@ -2,15 +2,7 @@ import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
 import { type Href, router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Keyboard, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -18,6 +10,7 @@ import Animated, {
   FadeInDown,
   FadeOut,
   runOnJS,
+  useAnimatedKeyboard,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -166,8 +159,9 @@ export default function ProtectedHomeScreen() {
     };
   });
 
+  const keyboard = useAnimatedKeyboard();
   const composerHiddenBottom = insets.bottom + Spacing.two;
-  const composerVisibleBottom = insets.bottom + BottomTabInset + Spacing.two;
+  const composerVisibleBottom = BottomTabInset + Spacing.five;
   const tabBarProgress = useSharedValue(isTabBarHidden ? 0 : 1);
 
   useEffect(() => {
@@ -177,11 +171,17 @@ export default function ProtectedHomeScreen() {
     });
   }, [isTabBarHidden, tabBarProgress]);
 
-  const composerAnimatedStyle = useAnimatedStyle(() => ({
-    paddingBottom:
-      composerHiddenBottom +
-      (composerVisibleBottom - composerHiddenBottom) * tabBarProgress.value,
-  }));
+  const composerAnimatedStyle = useAnimatedStyle(() => {
+    const isKeyboardOpen = keyboard.height.value > 0;
+
+    return {
+      gap: isKeyboardOpen ? Spacing.one : Spacing.two,
+      paddingBottom: isKeyboardOpen
+        ? keyboard.height.value
+        : composerHiddenBottom +
+          (composerVisibleBottom - composerHiddenBottom) * tabBarProgress.value,
+    };
+  });
 
   const navbarHintProgress = useSharedValue(0);
 
@@ -274,9 +274,7 @@ export default function ProtectedHomeScreen() {
 
   return (
     <GradientBackground>
-      <KeyboardAvoidingView
-        style={styles.screen}
-        behavior={Platform.select({ ios: 'padding', default: undefined })}>
+      <View style={styles.screen}>
         <View style={styles.screenBody}>
           <ScrollView
             ref={threadRef}
@@ -339,10 +337,7 @@ export default function ProtectedHomeScreen() {
           <GestureDetector gesture={revealTabBarGesture}>
             <Animated.View
               entering={FadeInDown.duration(620).delay(260)}
-              style={[
-                styles.composerShell,
-                isKeyboardVisible ? styles.composerShellKeyboardOpen : composerAnimatedStyle,
-              ]}>
+              style={[styles.composerShell, composerAnimatedStyle]}>
               {!isKeyboardVisible ? (
                 <Animated.View
                   entering={FadeIn.duration(220)}
@@ -387,7 +382,7 @@ export default function ProtectedHomeScreen() {
             </Animated.View>
           </GestureDetector>
         </View>
-      </KeyboardAvoidingView>
+      </View>
       <MemoVoiceSheet mode={voiceSheetMode} onDismiss={() => setVoiceSheetMode(null)} />
     </GradientBackground>
   );
@@ -495,8 +490,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 2,
-  },
-  composerShellKeyboardOpen: {
-    paddingBottom: 0,
   },
 });

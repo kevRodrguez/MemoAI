@@ -52,7 +52,6 @@ export function MemoPersonalityPills({ value, onChange }: MemoPersonalityPillsPr
 const styles = StyleSheet.create({
   content: {
     gap: 8,
-    paddingVertical: 2,
   },
   pill: {
     borderRadius: 999,

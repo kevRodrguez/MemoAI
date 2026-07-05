@@ -29,7 +29,7 @@ const inputModifiers = [
   textFieldStyle('plain'),
   lineLimit({ min: 1, max: 5 }),
   frame({ maxWidth: 100000 }),
-  padding({ horizontal: 18, vertical: 12 }),
+  padding({ horizontal: 18, vertical: 14 }),
   glassEffect({ glass: { variant: 'regular', interactive: true }, shape: 'capsule' }),
   foregroundStyle(MemoColors.white),
   tint(MemoColors.secondaryBlue),
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   host: {
-    minHeight: 52,
+    minHeight: 72,
   },
   errorText: {
     color: '#FCA5A5',
