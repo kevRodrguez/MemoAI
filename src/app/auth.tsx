@@ -4,9 +4,7 @@ import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
   LayoutChangeEvent,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -161,13 +159,13 @@ export default function AuthScreen() {
       />
 
       <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.keyboardView}>
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.content}
-            showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.keyboardView}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}>
             <Animated.View entering={FadeInDown.duration(580).delay(80)} style={styles.brandBlock}>
               <Image
                 source={require('@/assets/MemoLogoNameWhite.png')}
@@ -198,7 +196,7 @@ export default function AuthScreen() {
               </Animated.View>
 
               <Animated.View
-                layout={LinearTransition.springify().damping(18).stiffness(180)}
+                layout={LinearTransition.duration(280).easing(Easing.inOut(Easing.ease))}
                 style={styles.fields}>
                 {isSignUp && (
                   <Animated.View
@@ -284,8 +282,7 @@ export default function AuthScreen() {
                 <ActivityIndicator color={MemoColors.secondaryBlue} />
               </Animated.View>
             )}
-          </ScrollView>
-        </KeyboardAvoidingView>
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
@@ -336,7 +333,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: MemoColors.white,
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: '800',
     lineHeight: 42,
   },

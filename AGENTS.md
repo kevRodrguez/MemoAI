@@ -4,7 +4,7 @@
 
 Expo ha cambiado. Antes de escribir codigo en este repo, lee la documentacion exacta versionada de Expo SDK 57:
 
-https://docs.expo.dev/versions/v57.0.0/
+<https://docs.expo.dev/versions/v57.0.0/>
 
 El proyecto actual usa Expo `~57.0.2`, React Native `0.86.0`, React `19.2.3` y requiere Node compatible con `22.13.x+`.
 
@@ -12,7 +12,7 @@ El proyecto actual usa Expo `~57.0.2`, React Native `0.86.0`, React `19.2.3` y r
 
 Memo App es un asistente de productividad voice-first para reuniones presenciales de equipos de desarrollo. Su objetivo es reducir la carga administrativa de una reunion: capturar audio, transcribir, resumir, estructurar compromisos y convertir informacion hablada en tareas personales y contexto reutilizable.
 
-La experiencia principal gira alrededor de "Alma", un agente interactivo que vive en el home de la app. Alma tiene estados funcionales como apagada, escuchando, pensando y hablando. Su identidad visual final todavia no esta cerrada; por ahora debe tratarse como un concepto funcional con una direccion dark-first, gradientes azules en las esquinas y una sensibilidad visual cercana a una app iOS moderna tipo Gemini.
+La experiencia principal gira alrededor de "Memo", un agente interactivo que vive en el home de la app. Memo tiene estados funcionales como apagada, escuchando, pensando y hablando. Su identidad visual final todavia no esta cerrada; por ahora debe tratarse como un concepto funcional con una direccion dark-first, gradientes azules en las esquinas y una sensibilidad visual cercana a una app iOS moderna tipo Gemini.
 
 ## Estado actual del repo
 
@@ -26,7 +26,7 @@ Estado actual:
 - Assets de marca Memo disponibles en `assets/`.
 - Paleta de marca inicial en `assets/colors.ts`.
 - Tema base en `src/constants/theme.ts`.
-- No hay logica de dominio implementada todavia para reuniones, tareas, audio, Supabase ni Alma.
+- No hay logica de dominio implementada todavia para reuniones, tareas, audio, Supabase ni Memo.
 
 ## Stack y arquitectura objetivo
 
@@ -67,7 +67,7 @@ Lee `docs/` antes de hacer cambios de producto o arquitectura:
 - `docs/arquitectura.md`: arquitectura frontend-first y relacion con Supabase.
 - `docs/frontend.md`: estructura actual del frontend y convenciones.
 - `docs/diseno.md`: direccion visual y UX.
-- `docs/voz-y-alma.md`: modos de voz y comportamiento de Alma.
+- `docs/voz-y-Memo.md`: modos de voz y comportamiento de Memo.
 - `docs/datos-supabase.md`: contrato de datos y SQL base.
 - `docs/roadmap.md`: fases, pendientes y limites.
 

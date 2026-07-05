@@ -18,9 +18,9 @@ El repo todavia conserva pantallas de template de Expo. Ya existen assets de mar
 - Privacidad visible: grabacion, transcripcion y procesamiento deben tener estados explicitos.
 - Tareas personales: las tareas se presentan como compromisos propios, no como elementos compartidos por toda la reunion.
 
-## Alma
+## Memo
 
-Alma es el agente interactivo del home. En esta etapa se documenta como concepto funcional, no como mascota visual cerrada.
+Memo es el agente interactivo del home. En esta etapa se documenta como concepto funcional, no como mascota visual cerrada.
 
 Estados minimos:
 
@@ -29,13 +29,13 @@ Estados minimos:
 - Pensando: Memo procesa o consulta contexto.
 - Hablando: Memo responde al usuario.
 
-Alma debe comunicar estos estados mediante animacion, color, microinteracciones y feedback textual minimo.
+Memo debe comunicar estos estados mediante animacion, color, microinteracciones y feedback textual minimo.
 
 ## Pantallas objetivo
 
 Pantallas esperadas para el producto:
 
-- Home con Alma y control de sesion.
+- Home con Memo y control de sesion.
 - Reuniones recientes.
 - Detalle de reunion con audio, transcripcion y resumen.
 - Tareas personales detectadas o creadas desde reuniones.
@@ -44,8 +44,8 @@ Pantallas esperadas para el producto:
 
 ## Pendiente
 
-- Identidad visual final de Alma.
+- Identidad visual final de Memo.
 - Componentes definitivos de grabacion y reproduccion de audio.
 - Sistema de estados vacios, carga y errores.
 - Lineamientos de accesibilidad y contraste.
-- Motion spec para animaciones de Alma.
+- Motion spec para animaciones de Memo.

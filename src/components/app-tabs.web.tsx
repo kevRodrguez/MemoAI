@@ -6,31 +6,37 @@ import {
   TabTriggerSlotProps,
   TabListProps,
 } from 'expo-router/ui';
+import { useState } from 'react';
 import { Pressable, View, StyleSheet } from 'react-native';
 
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
+import { TabBarContext, useTabBar } from '@/context/tab-bar-context';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 
 export default function AppTabs() {
+  const [isTabBarHidden, setIsTabBarHidden] = useState(false);
+
   return (
-    <Tabs>
-      <TabSlot style={{ height: '100%' }} />
-      <TabList asChild>
-        <CustomTabList>
-          <TabTrigger name="meetings" href="/meetings" asChild>
-            <TabButton>Meetings</TabButton>
-          </TabTrigger>
-          <TabTrigger name="index" href="/" asChild>
-            <TabButton>Chat</TabButton>
-          </TabTrigger>
-          <TabTrigger name="tasks" href="/tasks" asChild>
-            <TabButton>Tasks</TabButton>
-          </TabTrigger>
-        </CustomTabList>
-      </TabList>
-    </Tabs>
+    <TabBarContext value={{ isTabBarHidden, setIsTabBarHidden }}>
+      <Tabs>
+        <TabSlot style={{ height: '100%' }} />
+        <TabList asChild>
+          <CustomTabList>
+            <TabTrigger name="meetings" href="/meetings" asChild>
+              <TabButton>Meetings</TabButton>
+            </TabTrigger>
+            <TabTrigger name="index" href="/" asChild>
+              <TabButton>Chat</TabButton>
+            </TabTrigger>
+            <TabTrigger name="tasks" href="/tasks" asChild>
+              <TabButton>Tasks</TabButton>
+            </TabTrigger>
+          </CustomTabList>
+        </TabList>
+      </Tabs>
+    </TabBarContext>
   );
 }
 
@@ -49,8 +55,13 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
 }
 
 export function CustomTabList(props: TabListProps) {
+  const { isTabBarHidden } = useTabBar();
+
   return (
-    <View {...props} style={styles.tabListContainer}>
+    <View
+      {...props}
+      style={[styles.tabListContainer, isTabBarHidden && styles.hidden]}
+      pointerEvents={isTabBarHidden ? 'none' : 'auto'}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
         <ThemedText type="smallBold" style={styles.brandText}>
           Memo
@@ -83,6 +94,9 @@ const styles = StyleSheet.create({
   },
   brandText: {
     marginRight: 'auto',
+  },
+  hidden: {
+    display: 'none',
   },
   pressed: {
     opacity: 0.7,

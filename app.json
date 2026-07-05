@@ -8,7 +8,10 @@
     "scheme": "memo",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.kevrodrguez.Memo"
+      "bundleIdentifier": "com.kevrodrguez.Memo",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Memo usa el microfono para conversar contigo por voz durante las llamadas."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -16,7 +19,14 @@
         "foregroundImage": "./assets/MemoAppIcon.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.kevrodrguez.Memo"
+      "package": "com.kevrodrguez.Memo",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.BLUETOOTH",
+        "android.permission.WAKE_LOCK"
+      ]
     },
     "web": {
       "output": "static",
@@ -31,7 +41,9 @@
           "image": "./assets/MemoLogoNameWhite.png",
           "imageWidth": 200
         }
-      ]
+      ],
+      "@livekit/react-native-expo-plugin",
+      "@config-plugins/react-native-webrtc"
     ],
     "experiments": {
       "typedRoutes": true,

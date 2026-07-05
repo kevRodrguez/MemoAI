@@ -1,143 +1,370 @@
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { type Href, router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
   FadeIn,
   FadeInDown,
+  FadeOut,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MemoColors } from '@/assets/colors';
 import { GradientBackground } from '@/components/gradient-background';
+import { MemoActionButtons } from '@/components/memo-action-buttons';
+import { MemoChatComposer } from '@/components/memo-chat-composer';
+import { MemoModeTrigger } from '@/components/memo-mode-trigger';
+import { MemoVoiceSheet } from '@/components/memo-voice-sheet';
 import { BottomTabInset, Spacing } from '@/constants/theme';
+import { useTabBar } from '@/context/tab-bar-context';
 import { useAuth } from '@/providers/auth-provider';
+import { sendMemoChatMessage } from '@/services/memo-webhooks';
+import type { MemoChatWebhookResponse, MemoMode, MemoStatus } from '@/types/memo';
+
+const STATUS_COPY: Record<MemoStatus, string> = {
+  off: '¡Hablemos!',
+  listening: 'Escuchando',
+  thinking: 'Pensando',
+  speaking: 'Hablando',
+};
+
+function getMemoStatus(isSending: boolean, latestReply: string | null): MemoStatus {
+  if (isSending) {
+    return 'thinking';
+  }
+
+  if (latestReply) {
+    return 'speaking';
+  }
+
+  return 'off';
+}
+
+function getReplyFromWebhook(response: MemoChatWebhookResponse) {
+  return response.reply ?? response.message ?? response.text ?? null;
+}
 
 export default function ProtectedHomeScreen() {
-  const { profile, user, loading, signOut } = useAuth();
-  const displayName = profile?.name || profile?.user_name || user?.email || 'Memo user';
-  const [isSignOutButtonPressed, setIsSignOutButtonPressed] = useState(false);
-  const almaProgress = useSharedValue(0);
-  const signOutButtonScale = useSharedValue(1);
+  const { profile, user } = useAuth();
+  const { isTabBarHidden, setIsTabBarHidden } = useTabBar();
+  const insets = useSafeAreaInsets();
+  const [voiceSheetMode, setVoiceSheetMode] = useState<MemoMode>(null);
+  const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [composerResetKey, setComposerResetKey] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [latestReply, setLatestReply] = useState<string | null>(null);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  const pulseProgress = useSharedValue(0);
+  const status = getMemoStatus(isSending, latestReply);
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsTabBarHidden(true);
+      return () => setIsTabBarHidden(false);
+    }, [setIsTabBarHidden])
+  );
 
   useEffect(() => {
-    almaProgress.value = withRepeat(
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+    const hideSubscription = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const revealTabBarGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetY([-14, 14])
+        .failOffsetX([-28, 28])
+        .onEnd((event) => {
+          'worklet';
+          if (event.translationY < -30) {
+            runOnJS(setIsTabBarHidden)(false);
+          } else if (event.translationY > 30) {
+            runOnJS(setIsTabBarHidden)(true);
+          }
+        }),
+    [setIsTabBarHidden]
+  );
+  const displayName = profile?.name || profile?.user_name || user?.email || 'Memo user';
+
+  const statusDescription = useMemo(() => {
+    if (status === 'thinking') {
+      return 'Enviando contexto a n8n';
+    }
+
+    if (status === 'speaking') {
+      return 'Respuesta recibida';
+    }
+
+    return `Hola, ${displayName}`;
+  }, [displayName, status]);
+
+  useEffect(() => {
+    pulseProgress.value = withRepeat(
       withTiming(1, {
-        duration: 2400,
+        duration: status === 'off' ? 3200 : 1700,
         easing: Easing.inOut(Easing.cubic),
       }),
       -1,
       true
     );
-  }, [almaProgress]);
+  }, [pulseProgress, status]);
+
+  const bubbleAnimatedStyle = useAnimatedStyle(() => {
+    const activeScale = status === 'off' ? 0.018 : 0.052;
+
+    return {
+      shadowOpacity: 0.18 + pulseProgress.value * 0.28,
+      transform: [
+        { translateY: -5 * pulseProgress.value },
+        { scale: 1 + pulseProgress.value * activeScale },
+      ],
+    };
+  });
+
+  const ringAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: 0.36 + pulseProgress.value * 0.38,
+    transform: [{ scale: 1 + pulseProgress.value * 0.12 }],
+  }));
+
+  const composerHiddenBottom = insets.bottom + Spacing.two;
+  const composerVisibleBottom = insets.bottom + BottomTabInset + Spacing.two;
+  const tabBarProgress = useSharedValue(isTabBarHidden ? 0 : 1);
 
   useEffect(() => {
-    signOutButtonScale.value = withTiming(isSignOutButtonPressed ? 0.98 : 1, {
-      duration: isSignOutButtonPressed ? 120 : 160,
+    tabBarProgress.value = withTiming(isTabBarHidden ? 0 : 1, {
+      duration: 260,
+      easing: Easing.out(Easing.cubic),
     });
-  }, [isSignOutButtonPressed, signOutButtonScale]);
+  }, [isTabBarHidden, tabBarProgress]);
 
-  const almaAnimatedStyle = useAnimatedStyle(() => ({
-    shadowOpacity: 0.24 + almaProgress.value * 0.22,
+  const composerAnimatedStyle = useAnimatedStyle(() => ({
+    paddingBottom:
+      composerHiddenBottom +
+      (composerVisibleBottom - composerHiddenBottom) * tabBarProgress.value,
+  }));
+
+  const navbarHintProgress = useSharedValue(0);
+
+  useEffect(() => {
+    if (!isKeyboardVisible) {
+      navbarHintProgress.value = withRepeat(
+        withTiming(1, {
+          duration: 1100,
+          easing: Easing.inOut(Easing.quad),
+        }),
+        -1,
+        true
+      );
+      return;
+    }
+
+    navbarHintProgress.value = 0;
+  }, [isKeyboardVisible, navbarHintProgress]);
+
+  const navbarRevealHintStyle = useAnimatedStyle(() => ({
+    opacity: 0.42 + navbarHintProgress.value * 0.38,
     transform: [
-      { translateY: -4 * almaProgress.value },
-      { scale: 1 + almaProgress.value * 0.035 },
+      {
+        translateY: (1 - tabBarProgress.value * 2) * -5 * navbarHintProgress.value,
+      },
     ],
   }));
 
-  const statusDotAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: 0.56 + almaProgress.value * 0.44,
-    transform: [{ scale: 0.85 + almaProgress.value * 0.28 }],
-  }));
+  const handleOpenVoiceSheet = (nextMode: Exclude<MemoMode, null>) => {
+    setVoiceSheetMode(nextMode);
+  };
 
-  const signOutButtonAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: signOutButtonScale.value }],
-  }));
+  const handleSendMessage = async () => {
+    const trimmedMessage = message.trim();
+
+    if (!trimmedMessage || isSending) {
+      return;
+    }
+
+    setIsSending(true);
+    setErrorMessage(null);
+    setLatestReply(null);
+
+    try {
+      const response = await sendMemoChatMessage({
+        message: trimmedMessage,
+        userId: user?.id ?? null,
+        profileId: profile?.profile_id ?? null,
+        userEmail: profile?.email ?? user?.email ?? null,
+        sentAt: new Date().toISOString(),
+        source: 'memo-home',
+      });
+
+      setMessage('');
+      setComposerResetKey((currentKey) => currentKey + 1);
+      setLatestReply(getReplyFromWebhook(response) ?? 'Memo recibio tu mensaje.');
+    } catch (error) {
+      const nextErrorMessage =
+        error instanceof Error ? error.message : 'No se pudo enviar el mensaje a Memo.';
+      setErrorMessage(nextErrorMessage);
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   return (
     <GradientBackground>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <SafeAreaView style={styles.safeArea}>
-          <Animated.View entering={FadeInDown.duration(520).delay(80)} style={styles.header}>
-            <Image source={require('@/assets/MemoLogoName.png')} style={styles.logo} contentFit="contain" />
-            <View style={styles.statusPill}>
-              <Animated.View style={[styles.statusDot, statusDotAnimatedStyle]} />
-              <Text style={styles.statusText}>Sesion activa</Text>
-            </View>
-          </Animated.View>
+      <GestureDetector gesture={revealTabBarGesture}>
+        <KeyboardAvoidingView
+          style={styles.screen}
+          behavior={Platform.select({ ios: 'padding', default: undefined })}>
+          <View style={styles.screenBody}>
+            <ScrollView
+              style={styles.scroll}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              contentContainerStyle={styles.scrollContent}>
+              <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+                <Animated.View entering={FadeInDown.duration(520).delay(80)} style={styles.header}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Mostrar u ocultar la barra de navegacion"
+                    hitSlop={12}
+                    onPress={() => setIsTabBarHidden((hidden) => !hidden)}>
+                    <Image
+                      source={require('@/assets/MemoLogoNameWhite.png')}
+                      style={styles.logo}
+                      contentFit="contain"
+                    />
+                  </Pressable>
 
-          <Animated.View entering={FadeInDown.duration(620).delay(160)} style={styles.hero}>
-            <Animated.View style={[styles.almaOrb, almaAnimatedStyle]}>
-              <Image source={require('@/assets/MemoIcon1080px.png')} style={styles.almaLogo} contentFit="contain" />
-            </Animated.View>
+                  <MemoActionButtons
+                    onOpenProfile={() => router.push('/profile' as Href)}
+                    onStartCall={() => handleOpenVoiceSheet('call')}
+                    onStartListen={() => handleOpenVoiceSheet('listen')}
+                  />
+                </Animated.View>
 
-            <Text style={styles.eyebrow}>{`Hola, ${displayName}`}</Text>
-            <Text style={styles.title}>Memo esta lista para tu proxima reunion.</Text>
-            <Text style={styles.subtitle}>
-              Auth y perfil ya estan conectados. El siguiente paso natural es capturar audio,
-              generar transcripcion y convertir compromisos en tareas personales.
-            </Text>
-          </Animated.View>
+                {!isKeyboardVisible ? (
+                  <Animated.View
+                    entering={FadeInDown.duration(620).delay(160)}
+                    exiting={FadeOut.duration(180)}
+                    style={styles.centerStage}>
+                    <MemoModeTrigger onSelectMode={handleOpenVoiceSheet} style={styles.trigger}>
+                      <Animated.View style={[styles.memoBubble, styles[status], bubbleAnimatedStyle]}>
+                        <Image
+                          source={require('@/assets/MemoIcon1080px.png')}
+                          style={styles.memoIcon}
+                          contentFit="contain"
+                        />
+                      </Animated.View>
+                    </MemoModeTrigger>
 
-          <Animated.View entering={FadeInDown.duration(620).delay(260)} style={styles.profilePanel}>
-            <Text style={styles.panelTitle}>Perfil</Text>
-            <Animated.View entering={FadeIn.duration(360).delay(380)}>
-              <ProfileRow label="Nombre" value={profile?.name ?? 'Pendiente'} />
-            </Animated.View>
-            <Animated.View entering={FadeIn.duration(360).delay(440)}>
-              <ProfileRow label="Usuario" value={profile?.user_name ?? 'Pendiente'} />
-            </Animated.View>
-            <Animated.View entering={FadeIn.duration(360).delay(500)}>
-              <ProfileRow label="Email" value={profile?.email ?? user?.email ?? 'Pendiente'} />
-            </Animated.View>
+                    <View style={styles.statusBlock}>
+                      <Text style={styles.statusDescription}>{statusDescription}</Text>
+                    </View>
+                      <Text style={styles.statusText}>{STATUS_COPY[status]}</Text>
+                  </Animated.View>
+                ) : null}
+              </SafeAreaView>
+            </ScrollView>
 
             <Animated.View
-              entering={FadeInDown.duration(420).delay(560)}
-              style={signOutButtonAnimatedStyle}>
-              <Pressable
-                onPress={signOut}
-                onPressIn={() => setIsSignOutButtonPressed(true)}
-                onPressOut={() => setIsSignOutButtonPressed(false)}
-                disabled={loading}
-                style={[styles.signOutButton, loading && styles.signOutButtonPressed]}>
-                <Text style={styles.signOutButtonText}>{loading ? 'Cerrando...' : 'Cerrar sesion'}</Text>
-              </Pressable>
+              entering={FadeInDown.duration(620).delay(260)}
+              style={[
+                styles.composerShell,
+                isKeyboardVisible ? styles.composerShellKeyboardOpen : composerAnimatedStyle,
+              ]}>
+              {!isKeyboardVisible ? (
+                <Animated.View
+                  entering={FadeIn.duration(220)}
+                  exiting={FadeOut.duration(150)}
+                  style={navbarRevealHintStyle}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      isTabBarHidden
+                        ? 'Desliza hacia arriba para mostrar la barra de navegacion'
+                        : 'Desliza hacia abajo para ocultar la barra de navegacion'
+                    }
+                    hitSlop={12}
+                    onPress={() => setIsTabBarHidden((hidden) => !hidden)}
+                    style={styles.navbarRevealHint}>
+                    <SymbolView
+                      name={
+                        isTabBarHidden
+                          ? { ios: 'chevron.up', android: 'keyboard_arrow_up', web: 'keyboard_arrow_up' }
+                          : {
+                              ios: 'chevron.down',
+                              android: 'keyboard_arrow_down',
+                              web: 'keyboard_arrow_down',
+                            }
+                      }
+                      tintColor="rgba(255,255,255,0.72)"
+                      size={20}
+                    />
+                  </Pressable>
+                </Animated.View>
+              ) : null}
+              <MemoChatComposer
+                loading={isSending}
+                resetKey={composerResetKey}
+                errorMessage={errorMessage}
+                latestReply={latestReply}
+                onChangeText={setMessage}
+                onSubmit={handleSendMessage}
+              />
             </Animated.View>
-          </Animated.View>
-        </SafeAreaView>
-      </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </GestureDetector>
+      <MemoVoiceSheet mode={voiceSheetMode} onDismiss={() => setVoiceSheetMode(null)} />
     </GradientBackground>
   );
 }
 
-function ProfileRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.profileRow}>
-      <Text style={styles.profileLabel}>{label}</Text>
-      <Text style={styles.profileValue} numberOfLines={1}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  screenBody: {
+    flex: 1,
+  },
   scroll: {
     flex: 1,
   },
-  content: {
-    paddingBottom: BottomTabInset + Spacing.five,
+  scrollContent: {
+    flexGrow: 1,
   },
   safeArea: {
     flex: 1,
-    padding: Spacing.four,
-    gap: Spacing.five,
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.three,
+    gap: Spacing.four,
   },
   header: {
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -147,102 +374,75 @@ const styles = StyleSheet.create({
     width: 132,
     height: 38,
   },
-  statusPill: {
-    flexDirection: 'row',
+  centerStage: {
+    flex: 1,
+    minHeight: 360,
     alignItems: 'center',
-    gap: Spacing.two,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    justifyContent: 'center',
+    gap: Spacing.four,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: MemoColors.secondaryBlue,
+  trigger: {
+    width: 236,
+    height: 236,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  memoBubble: {
+    width: 184,
+    height: 184,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 92,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+    shadowColor: MemoColors.secondaryBlue,
+    shadowOffset: { width: 0, height: 18 },
+    shadowRadius: 42,
+  },
+  memoIcon: {
+    width: 118,
+    height: 118,
+  },
+  off: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  listening: {
+    backgroundColor: 'rgba(35,133,255,0.20)',
+    borderColor: 'rgba(74,168,254,0.56)',
+  },
+  thinking: {
+    backgroundColor: 'rgba(80,115,255,0.22)',
+    borderColor: 'rgba(165,180,252,0.56)',
+  },
+  speaking: {
+    backgroundColor: 'rgba(14,165,233,0.22)',
+    borderColor: 'rgba(125,211,252,0.58)',
+  },
+  statusBlock: {
+    alignItems: 'center',
+    gap: 6,
   },
   statusText: {
     color: MemoColors.white,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  hero: {
-    gap: Spacing.three,
-  },
-  almaOrb: {
-    width: 144,
-    height: 144,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 72,
-    backgroundColor: 'rgba(35,133,255,0.13)',
-    borderWidth: 1,
-    borderColor: 'rgba(74,168,254,0.42)',
-  },
-  almaLogo: {
-    width: 92,
-    height: 92,
-  },
-  eyebrow: {
-    color: MemoColors.secondaryBlue,
-    fontSize: 14,
+    fontSize: 26,
     fontWeight: '800',
   },
-  title: {
-    color: MemoColors.white,
-    fontSize: 34,
-    fontWeight: '800',
-    lineHeight: 40,
-  },
-  subtitle: {
-    color: 'rgba(255,255,255,0.70)',
-    fontSize: 16,
-    lineHeight: 23,
-  },
-  profilePanel: {
-    gap: Spacing.three,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 24,
-    backgroundColor: 'rgba(4,10,26,0.72)',
-    padding: Spacing.four,
-  },
-  panelTitle: {
-    color: MemoColors.white,
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  profileRow: {
-    gap: 4,
-  },
-  profileLabel: {
-    color: 'rgba(255,255,255,0.52)',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  profileValue: {
-    color: MemoColors.white,
-    fontSize: 16,
+  statusDescription: {
+    color: 'rgba(255,255,255,0.66)',
+    fontSize: 24,
     fontWeight: '600',
+    textAlign: 'center',
   },
-  signOutButton: {
-    width: '100%',
-    height: 48,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.24)',
+  composerShell: {
+    paddingHorizontal: Spacing.four,
+    gap: Spacing.two,
+  },
+  navbarRevealHint: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 2,
   },
-  signOutButtonPressed: {
-    opacity: 0.72,
-  },
-  signOutButtonText: {
-    color: MemoColors.white,
-    fontSize: 15,
-    fontWeight: '800',
+  composerShellKeyboardOpen: {
+    paddingBottom: 0,
   },
 });
