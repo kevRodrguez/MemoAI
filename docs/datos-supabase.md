@@ -18,6 +18,7 @@ El audio de cada reunion se guarda en un bucket de Supabase. La tabla `meetings`
 ## Reglas de acceso y negocio
 
 - Las tareas pertenecen a un perfil y son personales.
+- Una tarea puede estar asociada opcionalmente a una reunion mediante `tasks.meeting_id`.
 - Las reuniones pertenecen a un perfil propietario.
 - Una reunion puede tener participantes invitados mediante `meeting_participants`.
 - Un participante puede ver resumen, audio y transcripcion de reuniones en las que participo.
@@ -43,18 +44,7 @@ CREATE TABLE profiles (
     avatar_url TEXT
 );
 
--- 3. Tabla: tasks
-CREATE TABLE tasks (
-    task_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    profile_id UUID REFERENCES profiles(profile_id) ON DELETE CASCADE,
-    title TEXT,
-    description TEXT,
-    priority_level TEXT,
-    status TEXT,
-    deadline DATE
-);
-
--- 4. Tabla: meetings
+-- 3. Tabla: meetings
 CREATE TABLE meetings (
     meeting_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_id UUID REFERENCES profiles(profile_id) ON DELETE CASCADE,
@@ -68,19 +58,24 @@ CREATE TABLE meetings (
     meeting_type meeting_type_enum
 );
 
+-- 4. Tabla: tasks
+CREATE TABLE tasks (
+    task_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    profile_id UUID REFERENCES profiles(profile_id) ON DELETE CASCADE,
+    meeting_id UUID REFERENCES meetings(meeting_id) ON DELETE SET NULL,
+    title TEXT,
+    description TEXT,
+    priority_level TEXT,
+    status TEXT,
+    deadline DATE
+);
+
 -- 5. Tabla: meeting_participants
 CREATE TABLE meeting_participants (
     meeting_participant_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     profile_id UUID REFERENCES profiles(profile_id) ON DELETE CASCADE,
     meeting_id UUID REFERENCES meetings(meeting_id) ON DELETE CASCADE,
     accepted BOOLEAN DEFAULT FALSE
-);
-
--- 6. Tabla: meeting_tasks
-CREATE TABLE meeting_tasks (
-    meeting_task_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    task_id UUID REFERENCES tasks(task_id) ON DELETE CASCADE,
-    meeting_id UUID REFERENCES meetings(meeting_id) ON DELETE CASCADE
 );
 ```
 
