@@ -1,0 +1,1930 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-task",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "33fba6e1-2168-48c4-aeb4-588e77acbe7c",
+      "name": "Webhook",
+      "webhookId": "c196d8c9-f86a-4005-ba22-561c85144270"
+    },
+    {
+      "parameters": {
+        "tableId": "tasks",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.title }}"
+            },
+            {
+              "fieldId": "profile_id",
+              "fieldValue": "={{ $json.profile_id }}"
+            },
+            {
+              "fieldId": "meeting_id",
+              "fieldValue": "={{ $json.meeting_id }}"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $json.description }}"
+            },
+            {
+              "fieldId": "priority_level",
+              "fieldValue": "={{ $json.priority_level }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "deadline",
+              "fieldValue": "={{ $json.deadline }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -96
+      ],
+      "id": "8f36dbfe-6277-4691-a34e-305373572818",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "V1yCUQYlU3GGZSzT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\n  \"profile_id\": $json.body.profile_id,\n  \"meeting_id\": $json.body.meeting_id || null,\n  \"title\": $json.body.title,\n  \"description\": $json.body.description,\n  \"priority_level\": $json.body.priority_level || 'medium',\n  \"status\": $json.body.status || 'pending',\n  \"deadline\": $json.body.deadline || null\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        0
+      ],
+      "id": "2dad4c01-c495-4a2f-8929-96192c068171",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"task_id\": $json.task_id } }}",
+        "options": {}
+      },
+      "id": "b38063bb-4d2c-4f85-b90b-19ebeaa1be01",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"Missing required fields: profile_id, title, description, priority_level, and status\" } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "25148e90-6aae-443c-b421-4f6a39bda9f2",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        928,
+        48
+      ],
+      "id": "bbb68c6a-a570-49ca-8d69-1eab07ec0ec0",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3a636d3b-f9e4-4c18-be67-b5b6c9b1d1ce",
+              "leftValue": "={{ $json.profile_id }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "05802c2e-d900-424a-87f3-53ef25ba9ee4",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "dc2302ac-7e98-46b7-ab01-25d23d31c064",
+              "leftValue": "={{ $json.description }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "1f197d8f-cc92-44cd-bbed-a04d93382487",
+              "leftValue": "={{ $json.priority_level }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "e81a7ef5-2a19-48bb-a412-8d82f4909d71",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        432,
+        0
+      ],
+      "id": "0fb4e331-2dcb-44c3-afc4-80483074166b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-meeting",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        480
+      ],
+      "id": "6654896e-432c-428b-89cb-b607fcb3a152",
+      "name": "Webhook1",
+      "webhookId": "create-meeting-webhook"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\n  \"owner_id\": $json.body.owner_id,\n  \"title\": $json.body.title,\n  \"date_time\": $json.body.date_time,\n  \"duration\": $json.body.duration || null,\n  \"audio_path\": $json.body.audio_path || null,\n  \"transcription\": $json.body.transcription || null,\n  \"ai_summary\": $json.body.ai_summary || null,\n  \"status\": $json.body.status || 'scheduled',\n  \"meeting_type\": $json.body.meeting_type || 'LIVE'\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        480
+      ],
+      "id": "103b279a-4526-4396-8f7f-250c24ca4804",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "owner-id-exists",
+              "leftValue": "={{ $json.owner_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "title-exists",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "date-time-exists",
+              "leftValue": "={{ $json.date_time }}",
+              "rightValue": "",
+              "operator": {
+                "type": "dateTime",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "status-exists",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "meeting-type-exists",
+              "leftValue": "={{ $json.meeting_type }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        432,
+        480
+      ],
+      "id": "591a1f0e-e47a-4f61-a864-e858c14b0a31",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "tableId": "meetings",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "owner_id",
+              "fieldValue": "={{ $json.owner_id }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.title }}"
+            },
+            {
+              "fieldId": "date_time",
+              "fieldValue": "={{ $json.date_time }}"
+            },
+            {
+              "fieldId": "duration",
+              "fieldValue": "={{ $json.duration }}"
+            },
+            {
+              "fieldId": "audio_path",
+              "fieldValue": "={{ $json.audio_path }}"
+            },
+            {
+              "fieldId": "transcription",
+              "fieldValue": "={{ $json.transcription }}"
+            },
+            {
+              "fieldId": "ai_summary",
+              "fieldValue": "={{ $json.ai_summary }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "meeting_type",
+              "fieldValue": "={{ $json.meeting_type }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        672,
+        384
+      ],
+      "id": "ad5c2b72-37df-4d41-b29f-d3ad0fcf8491",
+      "name": "Create a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "V1yCUQYlU3GGZSzT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"meeting_id\": $json.meeting_id } }}",
+        "options": {}
+      },
+      "id": "44679c59-979a-4a3b-bfdd-6953e2bdae65",
+      "name": "Respond Success1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"Missing required fields: owner_id, title, date_time, status, and meeting_type\" } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "be9a38c3-8aab-400a-8c37-c44d808bab06",
+      "name": "Respond Error1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"Failed to create meeting\" } }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        928,
+        528
+      ],
+      "id": "e0f68e9e-d6f3-4dc9-b63f-344a0c2ff49f",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "content": "## Update tasks",
+        "height": 464,
+        "width": 1408
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1248,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "ed2583ff-4750-4b26-8147-fc7f80439a92",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Delete tasks",
+        "height": 464,
+        "width": 1408
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2752,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "205fa6c6-49cd-422c-b730-367dd9720f13",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Uopdate meetings",
+        "height": 464,
+        "width": 1408
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1248,
+        336
+      ],
+      "typeVersion": 1,
+      "id": "3ea3c01d-8c0d-433f-97e5-632eac714ee0",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Delete meetings",
+        "height": 464,
+        "width": 1408
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2752,
+        336
+      ],
+      "typeVersion": 1,
+      "id": "5a22c1ce-b8c2-4103-bbf5-bc343bd931d5",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "tasks",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "task_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.task_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "profile_id",
+              "fieldValue": "={{ $json.profile_id }}"
+            },
+            {
+              "fieldId": "meeting_id",
+              "fieldValue": "={{ $json.meeting_id }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.title }}"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $json.description }}"
+            },
+            {
+              "fieldId": "priority_level",
+              "fieldValue": "={{ $json.priority_level }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "deadline",
+              "fieldValue": "={{ $json.deadline }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2112,
+        -96
+      ],
+      "id": "d09628f0-6e5a-459e-ac93-4cee0ed507f8",
+      "name": "Update row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "V1yCUQYlU3GGZSzT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "PATCH",
+        "path": "update-task",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        1440,
+        0
+      ],
+      "id": "e3fb455c-702f-490a-9079-e299cb7371c6",
+      "name": "Webhook2",
+      "webhookId": "update-task-webhook-id"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\n  \"task_id\": $json.body.task_id,\n  \"profile_id\": $json.body.profile_id,\n  \"meeting_id\": $json.body.meeting_id || null,\n  \"title\": $json.body.title,\n  \"description\": $json.body.description,\n  \"priority_level\": $json.body.priority_level,\n  \"status\": $json.body.status,\n  \"deadline\": $json.body.deadline || null\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1664,
+        0
+      ],
+      "id": "d38fe7c4-e7bb-4e9f-a285-d5e128679cb2",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"task_id\": $json.task_id } }}",
+        "options": {}
+      },
+      "id": "32fe8ef8-87bb-4057-8d4f-afe4d9b0a269",
+      "name": "Respond Success2",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2336,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"Missing required fields: task_id, profile_id, title, description, priority_level, and status\" } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "75d7046d-1a45-4463-a890-abe67ac7dfb4",
+      "name": "Respond Error2",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2112,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"Update task failed\" } }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2368,
+        48
+      ],
+      "id": "83152be1-00c1-430f-bfdf-8993c7e75149",
+      "name": "Respond to Webhook2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "update-task-required-0",
+              "leftValue": "={{ $json.task_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "update-task-required-1",
+              "leftValue": "={{ $json.profile_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "update-task-required-2",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "update-task-required-3",
+              "leftValue": "={{ $json.description }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "update-task-required-4",
+              "leftValue": "={{ $json.priority_level }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "update-task-required-5",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1872,
+        0
+      ],
+      "id": "27b9de75-a7d5-47bb-885d-36454420620e",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "tasks",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "task_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.task_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3536,
+        -64
+      ],
+      "id": "1c78b260-9000-4873-96df-c852f6420d1f",
+      "name": "Delete row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "V1yCUQYlU3GGZSzT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "DELETE",
+        "path": "delete-task",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        2864,
+        32
+      ],
+      "id": "ea18fcca-e98e-47ab-947e-34b0e1fc2659",
+      "name": "Webhook3",
+      "webhookId": "delete-task-webhook-id"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"task_id\": \"{{$json.body.task_id}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3088,
+        32
+      ],
+      "id": "323eabab-7022-4270-9bfb-cce79dcc307e",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"task_id\": $json.task_id } }}",
+        "options": {}
+      },
+      "id": "e2763bdf-5e64-405b-a06a-e6e08a86385b",
+      "name": "Respond Success3",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3760,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"Missing required field: task_id\" } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "3e22977a-41df-4eeb-8c84-e62dc76d68da",
+      "name": "Respond Error3",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3536,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"Delete task failed\" } }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        3792,
+        80
+      ],
+      "id": "543a207b-a06e-408c-8a76-037fae5dde2a",
+      "name": "Respond to Webhook3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "delete-task-required-0",
+              "leftValue": "={{ $json.task_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3296,
+        32
+      ],
+      "id": "024240c4-35bd-43d1-b04c-7c00f2f56594",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tasks",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "profile_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.profile_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5040,
+        -80
+      ],
+      "id": "e194234f-5fa5-41ad-a073-f619e028cafa",
+      "name": "Read rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "V1yCUQYlU3GGZSzT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "path": "read-tasks",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        4368,
+        16
+      ],
+      "id": "6b1abb55-aece-48d2-9cec-accb449880af",
+      "name": "Webhook4",
+      "webhookId": "read-tasks-webhook-id"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"profile_id\": \"{{$json.query.profile_id}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4592,
+        16
+      ],
+      "id": "6fcc2a30-4ab0-49f6-a840-0e31ecd9998b",
+      "name": "Edit Fields4"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"tasks\": $items(\"Read rows\").map(item => item.json) } }}",
+        "options": {}
+      },
+      "id": "92e13858-1d58-459e-b9ee-84ac38211301",
+      "name": "Respond Success4",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        5264,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"Missing required field: profile_id\" } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "1f0f5a04-7a4e-45b8-b7bd-0e796b1498f7",
+      "name": "Respond Error4",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        5040,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "read-tasks-required-0",
+              "leftValue": "={{ $json.profile_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4800,
+        16
+      ],
+      "id": "53f3011d-fbcd-4927-a980-b7cf80c5c47f",
+      "name": "If4"
+    },
+    {
+      "parameters": {
+        "httpMethod": "PATCH",
+        "path": "update-meeting",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        1392,
+        528
+      ],
+      "id": "3ce0f54d-0a2e-4003-b66a-be7548b7b2f8",
+      "name": "Webhook5",
+      "webhookId": "update-meeting-webhook-id"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "meetings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "meeting_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.meeting_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "owner_id",
+              "fieldValue": "={{ $json.owner_id }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.title }}"
+            },
+            {
+              "fieldId": "date_time",
+              "fieldValue": "={{ $json.date_time }}"
+            },
+            {
+              "fieldId": "duration",
+              "fieldValue": "={{ $json.duration }}"
+            },
+            {
+              "fieldId": "audio_path",
+              "fieldValue": "={{ $json.audio_path }}"
+            },
+            {
+              "fieldId": "transcription",
+              "fieldValue": "={{ $json.transcription }}"
+            },
+            {
+              "fieldId": "ai_summary",
+              "fieldValue": "={{ $json.ai_summary }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "meeting_type",
+              "fieldValue": "={{ $json.meeting_type }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2064,
+        432
+      ],
+      "id": "97e23c26-5fd1-47d0-8554-cbaf9d01edf7",
+      "name": "Update row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "V1yCUQYlU3GGZSzT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\n  \"meeting_id\": $json.body.meeting_id,\n  \"owner_id\": $json.body.owner_id,\n  \"title\": $json.body.title,\n  \"date_time\": $json.body.date_time,\n  \"duration\": $json.body.duration || null,\n  \"audio_path\": $json.body.audio_path || null,\n  \"transcription\": $json.body.transcription || null,\n  \"ai_summary\": $json.body.ai_summary || null,\n  \"status\": $json.body.status,\n  \"meeting_type\": $json.body.meeting_type\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1616,
+        528
+      ],
+      "id": "855967b7-f98a-4fcd-b23d-ff289eeb9143",
+      "name": "Edit Fields5"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"meeting_id\": $json.meeting_id } }}",
+        "options": {}
+      },
+      "id": "a0004418-aa28-4a71-8486-d85c9575d091",
+      "name": "Respond Success5",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2288,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"Missing required fields: meeting_id, owner_id, title, date_time, status, and meeting_type\" } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "63760a6a-638a-4fe9-bd5e-58d36c803b8d",
+      "name": "Respond Error5",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2064,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"Update meeting failed\" } }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2320,
+        576
+      ],
+      "id": "75b04ded-0e3e-499e-8c2e-831ac7a30634",
+      "name": "Respond to Webhook5"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "update-meeting-required-0",
+              "leftValue": "={{ $json.meeting_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "update-meeting-required-1",
+              "leftValue": "={{ $json.owner_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "update-meeting-required-2",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "update-meeting-required-3",
+              "leftValue": "={{ $json.date_time }}",
+              "rightValue": "",
+              "operator": {
+                "type": "dateTime",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "update-meeting-required-8",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "update-meeting-required-9",
+              "leftValue": "={{ $json.meeting_type }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1824,
+        528
+      ],
+      "id": "ac35ae6b-a4a5-44db-899d-4e75936acd68",
+      "name": "If5"
+    },
+    {
+      "parameters": {
+        "httpMethod": "DELETE",
+        "path": "delete-meeting",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        2960,
+        512
+      ],
+      "id": "8d6cb333-7a65-4de3-bcc2-dd34c535d5ac",
+      "name": "Webhook6",
+      "webhookId": "delete-meeting-webhook-id"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "meetings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "meeting_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.meeting_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3632,
+        416
+      ],
+      "id": "563e43d7-9162-4144-8cee-9ebc154d5467",
+      "name": "Delete row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "V1yCUQYlU3GGZSzT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"meeting_id\": \"{{$json.body.meeting_id}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3184,
+        512
+      ],
+      "id": "dddb5299-2406-4160-86dc-39d6149b1df0",
+      "name": "Edit Fields6"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"meeting_id\": $json.meeting_id } }}",
+        "options": {}
+      },
+      "id": "bd8e838e-cdc2-468e-b80c-a4254c119d3b",
+      "name": "Respond Success6",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3856,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"Missing required field: meeting_id\" } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "517dc6d3-4bab-4961-aafc-7b899bf074fc",
+      "name": "Respond Error6",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3632,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"Delete meeting failed\" } }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        3888,
+        560
+      ],
+      "id": "bb5ec4da-61ae-4979-863a-724abd9c1b74",
+      "name": "Respond to Webhook6"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "delete-meeting-required-0",
+              "leftValue": "={{ $json.meeting_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3392,
+        512
+      ],
+      "id": "ac0bc6d7-1ef7-4aec-a126-643edf2d355a",
+      "name": "If6"
+    },
+    {
+      "parameters": {
+        "path": "read-meetings",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        4400,
+        512
+      ],
+      "id": "05340dcc-8e2d-4bf9-badf-a1414b091b49",
+      "name": "Webhook7",
+      "webhookId": "read-meetings-webhook-id"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "meetings",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "owner_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.owner_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5072,
+        416
+      ],
+      "id": "42cf77b1-94d2-410d-b074-7b9bb6cf547c",
+      "name": "Read rows1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "V1yCUQYlU3GGZSzT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"owner_id\": \"{{$json.query.owner_id}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4624,
+        512
+      ],
+      "id": "a6417562-94bd-474d-8b89-e13c5d20a914",
+      "name": "Edit Fields7"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"Missing required field: owner_id\" } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "95ea993c-ee0c-4b6f-9e7d-406f1ddc99c4",
+      "name": "Respond Error7",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        5072,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "read-meetings-required-0",
+              "leftValue": "={{ $json.owner_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4832,
+        512
+      ],
+      "id": "b483061f-e53c-40a9-b46d-70cdeb8808cb",
+      "name": "If7"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Create a row1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row1": {
+      "main": [
+        [
+          {
+            "node": "Respond Success1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row": {
+      "main": [
+        [
+          {
+            "node": "Respond Success2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Update row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete row": {
+      "main": [
+        [
+          {
+            "node": "Respond Success3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook3": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "Delete row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read rows": {
+      "main": [
+        [
+          {
+            "node": "Respond Success4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Webhook4": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields4": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "Read rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook5": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row1": {
+      "main": [
+        [
+          {
+            "node": "Respond Success5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields5": {
+      "main": [
+        [
+          {
+            "node": "If5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If5": {
+      "main": [
+        [
+          {
+            "node": "Update row1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook6": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete row1": {
+      "main": [
+        [
+          {
+            "node": "Respond Success6",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields6": {
+      "main": [
+        [
+          {
+            "node": "If6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If6": {
+      "main": [
+        [
+          {
+            "node": "Delete row1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook7": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read rows1": {
+      "main": [
+        [],
+        []
+      ]
+    },
+    "Edit Fields7": {
+      "main": [
+        [
+          {
+            "node": "If7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If7": {
+      "main": [
+        [
+          {
+            "node": "Read rows1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "70188384a0a7d9a017f45cfb2119b03b55151f4d1de2d924a189dd3b6d413cfa"
+  }
+}
