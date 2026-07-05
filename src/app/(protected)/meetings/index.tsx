@@ -11,7 +11,7 @@ import { GradientBackground } from '@/components/gradient-background';
 import { SharedStyles } from '@/constants/shared-styles';
 import { Spacing } from '@/constants/theme';
 import { fetchMeetings } from '@/lib/memo-records';
-import { formatMeetingDate, isPastMeeting } from '@/lib/meeting-helpers';
+import { formatMeetingDate, canShowMeetingContent, isPastMeeting } from '@/lib/meeting-helpers';
 import { MemoMeeting } from '@/lib/supabase';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -149,7 +149,7 @@ export default function MeetingsScreen() {
           ) : (
             <View style={SharedStyles.list}>
               {visibleMeetings.map((meeting, index) => {
-                const canShowContent = isPastMeeting(meeting);
+                const canShowContent = canShowMeetingContent(meeting);
 
                 return (
                   <Animated.View
