@@ -7,6 +7,7 @@ import { SymbolView } from 'expo-symbols';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
+  cancelAnimation,
   Easing,
   interpolate,
   useAnimatedStyle,
@@ -108,11 +109,6 @@ function CallSheetBody({ insets, onDismiss }: CallSheetBodyProps) {
     let cancelled = false;
 
     enter.value = withTiming(1, { duration: 640, easing: Easing.out(Easing.cubic) });
-    pulse.value = withRepeat(
-      withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.quad) }),
-      -1,
-      true
-    );
 
     (async () => {
       try {
@@ -148,18 +144,38 @@ function CallSheetBody({ insets, onDismiss }: CallSheetBodyProps) {
   }, []);
 
   useEffect(() => {
-    speaking.value = withTiming(isSpeaking ? 1 : 0, { duration: 220 });
-  }, [isSpeaking, speaking]);
+    speaking.value = withTiming(isSpeaking ? 1 : 0, { duration: 260 });
+
+    cancelAnimation(pulse);
+    pulse.value = withRepeat(
+      withTiming(1, {
+        duration: isSpeaking ? 560 : 2400,
+        easing: Easing.inOut(Easing.quad),
+      }),
+      -1,
+      true
+    );
+
+    return () => {
+      cancelAnimation(pulse);
+    };
+  }, [isSpeaking, pulse, speaking]);
 
   const haloAnimatedStyle = useAnimatedStyle(() => {
     const baseScale = interpolate(enter.value, [0, 1], [1, 0.34]);
-    const pulseScale = 1 + pulse.value * (0.03 + speaking.value * 0.06);
+    const wave = pulse.value - 0.5;
+
+    const idleBreath = 1 + pulse.value * 0.03;
+    const liveScale = 1 + wave * 0.2 * speaking.value;
+    const bob = wave * 20 * speaking.value;
 
     return {
       opacity: interpolate(enter.value, [0, 0.4, 1], [0.5, 1, 1]),
+      shadowOpacity: 0.42 + speaking.value * 0.3,
+      shadowRadius: 48 + speaking.value * 26,
       transform: [
-        { translateY: interpolate(enter.value, [0, 1], [210, 0]) },
-        { scale: baseScale * pulseScale },
+        { translateY: interpolate(enter.value, [0, 1], [210, 0]) + bob },
+        { scale: baseScale * idleBreath * liveScale },
       ],
     };
   });

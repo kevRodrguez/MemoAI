@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { SymbolView } from 'expo-symbols';
 import { type Href, router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -13,6 +14,7 @@ import {
 import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
+  FadeIn,
   FadeInDown,
   FadeOut,
   runOnJS,
@@ -167,6 +169,33 @@ export default function ProtectedHomeScreen() {
       (composerVisibleBottom - composerHiddenBottom) * tabBarProgress.value,
   }));
 
+  const navbarHintProgress = useSharedValue(0);
+
+  useEffect(() => {
+    if (!isKeyboardVisible) {
+      navbarHintProgress.value = withRepeat(
+        withTiming(1, {
+          duration: 1100,
+          easing: Easing.inOut(Easing.quad),
+        }),
+        -1,
+        true
+      );
+      return;
+    }
+
+    navbarHintProgress.value = 0;
+  }, [isKeyboardVisible, navbarHintProgress]);
+
+  const navbarRevealHintStyle = useAnimatedStyle(() => ({
+    opacity: 0.42 + navbarHintProgress.value * 0.38,
+    transform: [
+      {
+        translateY: (1 - tabBarProgress.value * 2) * -5 * navbarHintProgress.value,
+      },
+    ],
+  }));
+
   const handleOpenVoiceSheet = (nextMode: Exclude<MemoMode, null>) => {
     setVoiceSheetMode(nextMode);
   };
@@ -267,6 +296,37 @@ export default function ProtectedHomeScreen() {
                 styles.composerShell,
                 isKeyboardVisible ? styles.composerShellKeyboardOpen : composerAnimatedStyle,
               ]}>
+              {!isKeyboardVisible ? (
+                <Animated.View
+                  entering={FadeIn.duration(220)}
+                  exiting={FadeOut.duration(150)}
+                  style={navbarRevealHintStyle}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      isTabBarHidden
+                        ? 'Desliza hacia arriba para mostrar la barra de navegacion'
+                        : 'Desliza hacia abajo para ocultar la barra de navegacion'
+                    }
+                    hitSlop={12}
+                    onPress={() => setIsTabBarHidden((hidden) => !hidden)}
+                    style={styles.navbarRevealHint}>
+                    <SymbolView
+                      name={
+                        isTabBarHidden
+                          ? { ios: 'chevron.up', android: 'keyboard_arrow_up', web: 'keyboard_arrow_up' }
+                          : {
+                              ios: 'chevron.down',
+                              android: 'keyboard_arrow_down',
+                              web: 'keyboard_arrow_down',
+                            }
+                      }
+                      tintColor="rgba(255,255,255,0.72)"
+                      size={20}
+                    />
+                  </Pressable>
+                </Animated.View>
+              ) : null}
               <MemoChatComposer
                 loading={isSending}
                 resetKey={composerResetKey}
@@ -375,6 +435,12 @@ const styles = StyleSheet.create({
   },
   composerShell: {
     paddingHorizontal: Spacing.four,
+    gap: Spacing.two,
+  },
+  navbarRevealHint: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 2,
   },
   composerShellKeyboardOpen: {
     paddingBottom: 0,
