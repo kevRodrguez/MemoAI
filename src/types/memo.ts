@@ -33,3 +33,43 @@ export type MemoTranscriptWebhookRequest = {
   profileId: string | null;
   endedAt: string;
 };
+
+export type ListeningTaskPriority = 'baja' | 'media' | 'alta';
+
+export type ListeningMeetingData = {
+  meeting_id: string | null;
+  owner_id: string;
+  title: string;
+  ai_summary: string;
+  transcription: string;
+  date_time: string | null;
+};
+
+export type ListeningTask = {
+  id: string | null;
+  title: string;
+  description: string;
+  priority_level: ListeningTaskPriority;
+  status: string;
+  deadline: string | null;
+};
+
+export type ListeningModeResult = {
+  selected_tool: 'tool_process_new_meeting' | 'tool_process_scheduled_meeting';
+  meeting_data: ListeningMeetingData;
+  new_tasks: ListeningTask[];
+};
+
+export type ListeningModeWebhookRequest = {
+  profile_id: string;
+  recording_url: string;
+  meeting_id: string;
+  timezone: string;
+  current_datetime: string;
+};
+
+export type ListeningModeWebhookResponse = ListeningModeResult & {
+  success?: boolean | string;
+  message?: string;
+  statusCode?: string;
+};
