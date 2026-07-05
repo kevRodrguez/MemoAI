@@ -46,11 +46,6 @@ export function MemoChatComposer({
 const styles = StyleSheet.create({
   container: {
     gap: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 22,
-    backgroundColor: 'rgba(4,10,26,0.78)',
-    padding: 12,
   },
   host: {
     minHeight: 48,
