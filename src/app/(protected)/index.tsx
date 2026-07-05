@@ -282,9 +282,9 @@ export default function ProtectedHomeScreen() {
                     </MemoModeTrigger>
 
                     <View style={styles.statusBlock}>
-                      <Text style={styles.statusText}>{STATUS_COPY[status]}</Text>
                       <Text style={styles.statusDescription}>{statusDescription}</Text>
                     </View>
+                      <Text style={styles.statusText}>{STATUS_COPY[status]}</Text>
                   </Animated.View>
                 ) : null}
               </SafeAreaView>

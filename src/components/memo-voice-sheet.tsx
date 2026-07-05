@@ -162,21 +162,18 @@ function CallSheetBody({ insets, onDismiss }: CallSheetBodyProps) {
   }, [isSpeaking, pulse, speaking]);
 
   const haloAnimatedStyle = useAnimatedStyle(() => {
-    const baseScale = interpolate(enter.value, [0, 1], [1, 0.34]);
+    const baseScale = interpolate(enter.value, [0, 1], [0.82, 1]);
     const wave = pulse.value - 0.5;
 
     const idleBreath = 1 + pulse.value * 0.03;
     const liveScale = 1 + wave * 0.2 * speaking.value;
-    const bob = wave * 20 * speaking.value;
+    const bob = wave * 22 * speaking.value;
 
     return {
-      opacity: interpolate(enter.value, [0, 0.4, 1], [0.5, 1, 1]),
+      opacity: interpolate(enter.value, [0, 0.4, 1], [0, 1, 1]),
       shadowOpacity: 0.42 + speaking.value * 0.3,
       shadowRadius: 48 + speaking.value * 26,
-      transform: [
-        { translateY: interpolate(enter.value, [0, 1], [210, 0]) + bob },
-        { scale: baseScale * idleBreath * liveScale },
-      ],
+      transform: [{ translateY: bob }, { scale: baseScale * idleBreath * liveScale }],
     };
   });
 
@@ -206,7 +203,7 @@ function CallSheetBody({ insets, onDismiss }: CallSheetBodyProps) {
       case 'connecting':
         return 'Preparando la conexion de voz';
       case 'connected':
-        return 'Llamada en curso con Memo';
+        return 'Llamada en curso';
       default:
         return 'La llamada ha terminado';
     }
@@ -221,20 +218,20 @@ function CallSheetBody({ insets, onDismiss }: CallSheetBodyProps) {
 
   return (
     <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, Spacing.four) }]}>
-      <View style={styles.callStage}>
-        <Animated.View style={[styles.callHalo, isConnected && styles.callHaloActive, haloAnimatedStyle]}>
-          <Image
-            source={require('@/assets/MemoIcon1080px.png')}
-            style={styles.memoIcon}
-            contentFit="contain"
-          />
-        </Animated.View>
-      </View>
-
       <View style={styles.copyBlock}>
         <Text style={styles.eyebrow}>Llamada con Memo</Text>
         <Text style={styles.title}>{statusText}</Text>
         <Text style={styles.description}>{statusDescription}</Text>
+      </View>
+
+      <View style={styles.callStage}>
+        <Animated.View style={[styles.callHalo, isConnected && styles.callHaloActive, haloAnimatedStyle]}>
+          <Image
+            source={require('@/assets/MemoIcon1080px.png')}
+            style={styles.callIcon}
+            contentFit="contain"
+          />
+        </Animated.View>
       </View>
 
       <View style={styles.controls}>
@@ -326,16 +323,16 @@ const styles = StyleSheet.create({
     gap: Spacing.five,
   },
   callStage: {
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    minHeight: 220,
-  },
-  callHalo: {
-    width: 220,
-    height: 220,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 110,
+  },
+  callHalo: {
+    width: 184,
+    height: 184,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 92,
     borderWidth: 1,
     borderColor: statusColors.connecting,
     backgroundColor: 'rgba(35,133,255,0.18)',
@@ -347,6 +344,10 @@ const styles = StyleSheet.create({
   callHaloActive: {
     borderColor: statusColors.connected,
     backgroundColor: 'rgba(14,165,233,0.22)',
+  },
+  callIcon: {
+    width: 118,
+    height: 118,
   },
   memoStage: {
     flex: 1,
