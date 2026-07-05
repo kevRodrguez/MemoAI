@@ -21,7 +21,6 @@ type MemoChatComposerProps = {
   loading: boolean;
   resetKey: number;
   errorMessage: string | null;
-  latestReply: string | null;
   onChangeText: (value: string) => void;
   onSubmit: () => void;
 };
@@ -30,7 +29,7 @@ const inputModifiers = [
   textFieldStyle('plain'),
   lineLimit({ min: 1, max: 5 }),
   frame({ maxWidth: 100000 }),
-  padding({ horizontal: 18, vertical: 12 }),
+  padding({ horizontal: 18, vertical: 14 }),
   glassEffect({ glass: { variant: 'regular', interactive: true }, shape: 'capsule' }),
   foregroundStyle(MemoColors.white),
   tint(MemoColors.secondaryBlue),
@@ -40,7 +39,6 @@ export function MemoChatComposer({
   loading,
   resetKey,
   errorMessage,
-  latestReply,
   onChangeText,
   onSubmit,
 }: MemoChatComposerProps) {
@@ -54,13 +52,6 @@ export function MemoChatComposer({
 
   return (
     <View style={styles.container}>
-      {latestReply ? (
-        <View style={styles.replyPanel}>
-          <Text style={styles.replyLabel}>Memo</Text>
-          <Text style={styles.replyText}>{latestReply}</Text>
-        </View>
-      ) : null}
-
       {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
       <Host matchContents={{ vertical: true }} style={styles.host}>
@@ -94,24 +85,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   host: {
-    minHeight: 52,
-  },
-  replyPanel: {
-    gap: 4,
-    borderRadius: 16,
-    backgroundColor: 'rgba(35,133,255,0.15)',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  replyLabel: {
-    color: MemoColors.secondaryBlue,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  replyText: {
-    color: MemoColors.white,
-    fontSize: 14,
-    lineHeight: 20,
+    minHeight: 72,
   },
   errorText: {
     color: '#FCA5A5',

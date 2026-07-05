@@ -128,6 +128,7 @@ function CallSheetBody({ insets, onDismiss }: CallSheetBodyProps) {
           dynamicVariables: {
             profile_id: profile?.profile_id ?? '',
             name: profile?.name ?? '',
+            current_time: new Date().toISOString(),
           },
         });
       } catch (error) {
