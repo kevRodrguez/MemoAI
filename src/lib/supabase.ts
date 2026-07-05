@@ -60,3 +60,27 @@ export type MemoProfile = {
   email: string | null;
   avatar_url: string | null;
 };
+
+export type MemoTask = {
+  task_id: string;
+  profile_id: string;
+  meeting_id: string | null;
+  title: string | null;
+  description: string | null;
+  priority_level: string | null;
+  status: string | null;
+  deadline: string | null;
+};
+
+export type MemoMeeting = {
+  meeting_id: string;
+  owner_id: string;
+  title: string | null;
+  date_time: string | null;
+  duration: number | null;
+  audio_path: string | null;
+  transcription: string | null;
+  ai_summary: string | null;
+  status: string | null;
+  meeting_type: 'LIVE' | 'POST' | null;
+};

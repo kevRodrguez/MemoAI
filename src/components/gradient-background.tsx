@@ -23,7 +23,7 @@ export function GradientBackground({ children, style }: GradientBackgroundProps)
   useEffect(() => {
     orbitProgress.value = withRepeat(
       withTiming(1, {
-        duration: 10000,
+        duration: 4500,
         easing: Easing.linear,
       }),
       -1,
@@ -32,7 +32,7 @@ export function GradientBackground({ children, style }: GradientBackgroundProps)
 
     driftProgress.value = withRepeat(
       withTiming(1, {
-        duration: 7000,
+        duration: 3200,
         easing: Easing.inOut(Easing.sin),
       }),
       -1,
@@ -43,12 +43,12 @@ export function GradientBackground({ children, style }: GradientBackgroundProps)
   const topGlowAnimatedStyle = useAnimatedStyle(() => {
     const angle = orbitProgress.value * Math.PI * 2;
     return {
-      opacity: 0.68 + driftProgress.value * 0.28,
+      opacity: 0.68 + driftProgress.value * 0.34,
       transform: [
-        { translateX: Math.cos(angle) * 52 - 24 },
-        { translateY: Math.sin(angle) * 38 - 18 },
-        { scale: 1.05 + driftProgress.value * 0.12 },
-        { rotate: `${orbitProgress.value * 18}deg` },
+        { translateX: Math.cos(angle) * 72 - 24 },
+        { translateY: Math.sin(angle) * 54 - 18 },
+        { scale: 1.05 + driftProgress.value * 0.16 },
+        { rotate: `${orbitProgress.value * 28}deg` },
       ],
     };
   });
@@ -56,11 +56,11 @@ export function GradientBackground({ children, style }: GradientBackgroundProps)
   const bottomGlowAnimatedStyle = useAnimatedStyle(() => {
     const angle = orbitProgress.value * Math.PI * 2 + Math.PI * 0.65;
     return {
-      opacity: 0.7 + (1 - driftProgress.value) * 0.26,
+      opacity: 0.7 + (1 - driftProgress.value) * 0.32,
       transform: [
-        { translateX: Math.sin(angle) * 64 },
-        { translateY: Math.cos(angle) * 28 - 20 },
-        { scale: 1.08 + (1 - driftProgress.value) * 0.1 },
+        { translateX: Math.sin(angle) * 88 },
+        { translateY: Math.cos(angle) * 42 - 20 },
+        { scale: 1.08 + (1 - driftProgress.value) * 0.14 },
       ],
     };
   });
@@ -68,11 +68,11 @@ export function GradientBackground({ children, style }: GradientBackgroundProps)
   const accentGlowAnimatedStyle = useAnimatedStyle(() => {
     const angle = orbitProgress.value * Math.PI * 2 + Math.PI;
     return {
-      opacity: 0.22 + driftProgress.value * 0.18,
+      opacity: 0.22 + driftProgress.value * 0.24,
       transform: [
-        { translateX: Math.cos(angle) * 40 + 48 },
-        { translateY: Math.sin(angle) * 56 + 120 },
-        { scale: 0.92 + driftProgress.value * 0.16 },
+        { translateX: Math.cos(angle) * 58 + 48 },
+        { translateY: Math.sin(angle) * 76 + 120 },
+        { scale: 0.92 + driftProgress.value * 0.2 },
       ],
     };
   });
