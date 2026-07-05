@@ -5,6 +5,7 @@ import { SymbolView } from 'expo-symbols';
 import { type Href, router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   Keyboard,
   Platform,
   Pressable,
@@ -306,6 +307,23 @@ export default function ProtectedHomeScreen() {
     router.push('/profile' as Href);
   }, []);
 
+  const handleClearChat = useCallback(() => {
+    Alert.alert('Limpiar chat', '¿Quieres borrar toda la conversación?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Limpiar',
+        style: 'destructive',
+        onPress: () => {
+          setMessages([]);
+          setErrorMessage(null);
+          setMessage('');
+          setComposerResetKey((currentKey) => currentKey + 1);
+          setIsSending(false);
+        },
+      },
+    ]);
+  }, []);
+
   const scrollContentStyle = useMemo(
     () => [
       styles.scrollContent,
@@ -364,17 +382,35 @@ export default function ProtectedHomeScreen() {
               <Animated.View
                 entering={FadeInDown.duration(520).delay(80)}
                 style={styles.header}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Mostrar u ocultar la barra de navegacion"
-                  hitSlop={12}
-                  onPress={() => setIsTabBarHidden((hidden) => !hidden)}>
-                  <Image
-                    source={require('@/assets/MemoLogoNameWhite.png')}
-                    style={styles.logo}
-                    contentFit="contain"
-                  />
-                </Pressable>
+                <View style={styles.logoColumn}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Mostrar u ocultar la barra de navegacion"
+                    hitSlop={12}
+                    onPress={() => setIsTabBarHidden((hidden) => !hidden)}>
+                    <Image
+                      source={require('@/assets/MemoLogoNameWhite.png')}
+                      style={styles.logo}
+                      contentFit="contain"
+                    />
+                  </Pressable>
+                  {hasMessages ? (
+                    <Animated.View entering={FadeIn.duration(220)} exiting={FadeOut.duration(150)}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Limpiar chat"
+                        hitSlop={8}
+                        onPress={handleClearChat}
+                        style={styles.clearChatButton}>
+                        <SymbolView
+                          name={{ ios: 'trash', android: 'delete', web: 'delete' }}
+                          tintColor="rgba(255,255,255,0.72)"
+                          size={16}
+                        />
+                      </Pressable>
+                    </Animated.View>
+                  ) : null}
+                </View>
 
                 <MemoActionButtons
                   onOpenProfile={handleOpenProfile}
@@ -500,9 +536,18 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.three,
     paddingBottom: Spacing.three,
   },
+  logoColumn: {
+    alignItems: 'flex-start',
+    gap: 2,
+  },
   logo: {
     width: 132,
     height: 38,
+  },
+  clearChatButton: {
+    alignSelf: 'flex-start',
+    padding: 4,
+    marginLeft: 2,
   },
   thread: {
     flex: 1,
