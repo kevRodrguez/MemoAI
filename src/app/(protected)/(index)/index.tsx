@@ -328,89 +328,104 @@ export default function ProtectedHomeScreen() {
     () => [
       styles.scrollContent,
       {
-        paddingTop: headerHeight || insets.top + 48 + Spacing.three,
+        paddingTop:
+          (headerHeight || insets.top + 56 + Spacing.three) + (hasMessages ? 52 : 0),
         paddingBottom: footerHeight || 140,
       },
     ],
-    [footerHeight, headerHeight, insets.top]
+    [footerHeight, hasMessages, headerHeight, insets.top]
   );
 
   return (
     <GradientBackground>
       <View style={styles.screen}>
         <View style={styles.screenBody}>
-          <ScrollView
-            ref={threadRef}
-            style={styles.scroll}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-            contentContainerStyle={scrollContentStyle}>
-            <SafeAreaView edges={['left', 'right']} style={styles.safeArea}>
-              {hasMessages ? (
-                <View style={styles.thread}>
-                  {messages.map((chatMessage) => (
-                    <MemoChatBubble key={chatMessage.id} message={chatMessage} />
-                  ))}
-                  {isSending ? <MemoChatTypingIndicator /> : null}
-                </View>
-              ) : !isKeyboardVisible ? (
-                <Animated.View
-                  entering={FadeInDown.duration(620).delay(160)}
-                  exiting={FadeOut.duration(180)}
-                  style={styles.centerStage}>
-                  <MemoModeTrigger onSelectMode={handleOpenVoiceSheet} style={styles.trigger}>
-                    <Animated.View style={[styles.memoBubble, styles[status], bubbleAnimatedStyle]}>
-                      <Image
-                        source={require('@/assets/MemoIcon1080px.png')}
-                        style={styles.memoIcon}
-                        contentFit="contain"
-                      />
-                    </Animated.View>
-                  </MemoModeTrigger>
-
-                  <View style={styles.statusBlock}>
-                    <Text style={styles.statusDescription}>{statusDescription}</Text>
+          <View style={styles.scrollHost}>
+            <ScrollView
+              ref={threadRef}
+              style={styles.scroll}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              contentContainerStyle={scrollContentStyle}>
+              <SafeAreaView edges={['left', 'right']} style={styles.safeArea}>
+                {hasMessages ? (
+                  <View style={styles.thread}>
+                    {messages.map((chatMessage) => (
+                      <MemoChatBubble key={chatMessage.id} message={chatMessage} />
+                    ))}
+                    {isSending ? <MemoChatTypingIndicator /> : null}
                   </View>
-                  <Text style={styles.statusText}>{STATUS_COPY[status]}</Text>
-                </Animated.View>
-              ) : null}
-            </SafeAreaView>
-          </ScrollView>
+                ) : !isKeyboardVisible ? (
+                  <Animated.View
+                    entering={FadeInDown.duration(620).delay(160)}
+                    exiting={FadeOut.duration(180)}
+                    style={styles.centerStage}>
+                    <MemoModeTrigger onSelectMode={handleOpenVoiceSheet} style={styles.trigger}>
+                      <Animated.View style={[styles.memoBubble, styles[status], bubbleAnimatedStyle]}>
+                        <Image
+                          source={require('@/assets/MemoIcon1080px.png')}
+                          style={styles.memoIcon}
+                          contentFit="contain"
+                        />
+                      </Animated.View>
+                    </MemoModeTrigger>
+
+                    <View style={styles.statusBlock}>
+                      <Text style={styles.statusDescription}>{statusDescription}</Text>
+                    </View>
+                    <Text style={styles.statusText}>{STATUS_COPY[status]}</Text>
+                  </Animated.View>
+                ) : null}
+              </SafeAreaView>
+            </ScrollView>
+
+            {hasMessages ? (
+              <Animated.View
+                entering={FadeIn.duration(220)}
+                exiting={FadeOut.duration(150)}
+                pointerEvents="box-none"
+                style={[
+                  styles.clearChatFloating,
+                  {
+                    top:
+                      (headerHeight || insets.top + 48 + Spacing.three) + Spacing.one,
+                  },
+                ]}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Limpiar chat"
+                  hitSlop={8}
+                  onPress={handleClearChat}
+                  style={({ pressed }) => [
+                    styles.clearChatButton,
+                    pressed && styles.clearChatButtonPressed,
+                  ]}>
+                  <SymbolView
+                    name={{ ios: 'trash', android: 'delete', web: 'delete' }}
+                    tintColor="rgba(255,255,255,0.72)"
+                    size={16}
+                  />
+                </Pressable>
+              </Animated.View>
+            ) : null}
+          </View>
 
           <BlurView {...blurSurfaceProps} style={[styles.headerOverlay, { backgroundColor: BLUR_FALLBACK }]}>
             <SafeAreaView edges={['top', 'left', 'right']} onLayout={handleHeaderLayout}>
               <Animated.View
                 entering={FadeInDown.duration(520).delay(80)}
                 style={styles.header}>
-                <View style={styles.logoColumn}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Mostrar u ocultar la barra de navegacion"
-                    hitSlop={12}
-                    onPress={() => setIsTabBarHidden((hidden) => !hidden)}>
-                    <Image
-                      source={require('@/assets/MemoLogoNameWhite.png')}
-                      style={styles.logo}
-                      contentFit="contain"
-                    />
-                  </Pressable>
-                  {hasMessages ? (
-                    <Animated.View entering={FadeIn.duration(220)} exiting={FadeOut.duration(150)}>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Limpiar chat"
-                        hitSlop={8}
-                        onPress={handleClearChat}
-                        style={styles.clearChatButton}>
-                        <SymbolView
-                          name={{ ios: 'trash', android: 'delete', web: 'delete' }}
-                          tintColor="rgba(255,255,255,0.72)"
-                          size={16}
-                        />
-                      </Pressable>
-                    </Animated.View>
-                  ) : null}
-                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Mostrar u ocultar la barra de navegacion"
+                  hitSlop={12}
+                  onPress={() => setIsTabBarHidden((hidden) => !hidden)}>
+                  <Image
+                    source={require('@/assets/MemoLogoNameWhite.png')}
+                    style={styles.logo}
+                    contentFit="contain"
+                  />
+                </Pressable>
 
                 <MemoActionButtons
                   onOpenProfile={handleOpenProfile}
@@ -505,6 +520,10 @@ const styles = StyleSheet.create({
   screenBody: {
     flex: 1,
   },
+  scrollHost: {
+    flex: 1,
+    position: 'relative',
+  },
   headerOverlay: {
     position: 'absolute',
     top: 0,
@@ -536,18 +555,28 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.three,
     paddingBottom: Spacing.three,
   },
-  logoColumn: {
-    alignItems: 'flex-start',
-    gap: 2,
-  },
   logo: {
     width: 132,
     height: 38,
   },
+  clearChatFloating: {
+    position: 'absolute',
+    left: Spacing.four,
+    zIndex: 8,
+  },
   clearChatButton: {
-    alignSelf: 'flex-start',
-    padding: 4,
-    marginLeft: 2,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  clearChatButtonPressed: {
+    opacity: 0.72,
+    transform: [{ scale: 0.98 }],
   },
   thread: {
     flex: 1,
