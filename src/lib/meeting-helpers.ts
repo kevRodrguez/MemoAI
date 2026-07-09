@@ -14,6 +14,18 @@ export function isPastMeeting(meeting: MemoMeeting) {
   return Boolean(date && date.getTime() < Date.now());
 }
 
+export function hasMeetingSummary(meeting: MemoMeeting) {
+  return (
+    meeting.status === 'completed' ||
+    Boolean(meeting.ai_summary?.trim()) ||
+    Boolean(meeting.transcription?.trim())
+  );
+}
+
+export function canShowMeetingContent(meeting: MemoMeeting) {
+  return isPastMeeting(meeting) || hasMeetingSummary(meeting);
+}
+
 export function formatMeetingDate(value: string | null) {
   if (!value) {
     return 'Sin fecha';

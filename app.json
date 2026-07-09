@@ -1,17 +1,19 @@
 {
   "expo": {
     "name": "Memo",
-    "slug": "Memo",
+    "slug": "memo-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/MemoAppIcon.png",
     "scheme": "memo",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.kevrodrguez.Memo",
+      "bundleIdentifier": "app.memo.mobile",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Memo usa el microfono para conversar contigo por voz durante las llamadas."
-      }
+        "NSMicrophoneUsageDescription": "Memo usa el microfono para conversar contigo por voz y grabar reuniones en modo escucha.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bitcode": false
     },
     "android": {
       "adaptiveIcon": {
@@ -19,13 +21,18 @@
         "foregroundImage": "./assets/MemoAppIcon.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.kevrodrguez.Memo",
+      "package": "app.memo.mobile",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.BLUETOOTH",
-        "android.permission.WAKE_LOCK"
+        "android.permission.WAKE_LOCK",
+        "android.permission.CAMERA",
+        "android.permission.INTERNET",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
     "web": {
@@ -43,11 +50,24 @@
         }
       ],
       "@livekit/react-native-expo-plugin",
-      "@config-plugins/react-native-webrtc"
+      "@config-plugins/react-native-webrtc",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Memo usa el microfono para grabar la reunion en modo escucha."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4f78b5e7-1e35-454c-80eb-0734234c9b07"
+      }
+    },
+    "owner": "kevrodrguez"
   }
 }

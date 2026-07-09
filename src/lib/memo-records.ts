@@ -121,3 +121,17 @@ export async function fetchMeetingById(meetingId: string) {
 
   return data as MemoMeeting;
 }
+
+export async function fetchTasksByMeetingId(meetingId: string) {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('task_id, profile_id, meeting_id, title, description, priority_level, status, deadline')
+    .eq('meeting_id', meetingId)
+    .order('deadline', { ascending: true, nullsFirst: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as MemoTask[];
+}
